@@ -211,10 +211,13 @@ public class Ast {
         }
 
         private Contract findContract(String name) {
+            return getOptionalContract(name).get();
+        }
+
+        private Optional<Contract> getOptionalContract(String name) {
             return contracts.stream()
                     .filter(c -> StringUtils.equals(c.getName(), name))
-                    .findFirst()
-                    .get();
+                    .findFirst();
         }
 
         public List<Contract> getContractHierarchy(String name) {
@@ -245,14 +248,17 @@ public class Ast {
             deferredTypeDefinitions.add(undefinedType);
         }
 
-        public void resolveDeferredTypeDefinitions() {
-            deferredTypeDefinitions.stream().forEach(type -> {
-                if (isUserDefined(Type.Names.STRUCT, type.getType())) {
-                    type.setName(Type.Names.STRUCT);
-                } else if (isUserDefined(Type.Names.ENUM, type.getType())) {
-                    type.setName(Type.Names.ENUM);
+        private void resolveTypeDefinitions(Type.UserDefined type) {
+            for (String typeName : userDefinedTypes.keySet()) {
+                if (isUserDefined(typeName, type.getType())) {
+                    type.setName(typeName);
+                    return;
                 }
-            });
+            }
+        }
+
+        public void resolveDeferredTypeDefinitions() {
+            deferredTypeDefinitions.stream().forEach(this::resolveTypeDefinitions);
         }
     }
 
@@ -306,11 +312,16 @@ public class Ast {
         }
 
         public List<String> hierarchy() {
-            List<String> result = inheritances.stream()
-                    .map(inheritance -> getRoot().findContract(inheritance.getName()).hierarchy())
-                    .flatMap(hierarchy -> hierarchy.stream())
-                    .distinct()
-                    .collect(toList());
+            List<String> result = new ArrayList<>();
+            for (int i = inheritances.size() - 1; i >= 0; i--) {
+                Inheritance inheritance = inheritances.get(i);
+                Contract parent = getRoot().findContract(inheritance.getName());
+                List<String> hierarchy = parent.hierarchy().stream()
+                        .filter(parentHierarchy -> !result.contains(parentHierarchy))
+                        .collect(toList());
+
+                result.addAll(0, hierarchy);
+            }
             result.add(this.getName());
 
             return result;
@@ -325,7 +336,11 @@ public class Ast {
         }
 
         public static Ast.Entries<Contract> entries(Root root) {
-            return new Entries<>(Patterns.CONTRACT_DEFINITION, matcher -> new Contract(root, matcher.group(1)));
+            return new Entries<>(Patterns.CONTRACT_DEFINITION, matcher -> {
+                String name = matcher.group(1);
+                root.onUserDefinedDetected(Type.Names.CONTRACT, name);
+                return new Contract(root, name);
+            });
         }
 
         public static Contract fromJson(String json) {
@@ -454,6 +469,7 @@ public class Ast {
             public static final String ARRAY = "array";
             public static final String STRUCT = "struct";
             public static final String ENUM = "enum";
+            public static final String CONTRACT = "contract";
 
             public static final String UNKNOWN = "unknown";
         }
@@ -507,6 +523,7 @@ public class Ast {
             return this.isArray() && this.as(Array.class).getElementType().isStruct();
         }
 
+        @JsonIgnore
         public boolean isStaticArray() {
             return isArray() && this.asArray().isStatic();
         }
@@ -514,6 +531,11 @@ public class Ast {
         @JsonIgnore
         public boolean isEnum() {
             return is(Names.ENUM);
+        }
+
+        @JsonIgnore
+        public boolean isContract() {
+            return is(Names.CONTRACT);
         }
 
         protected <T> T as(Class<T> castClass) {
@@ -559,6 +581,8 @@ public class Ast {
                     return new Struct(parent, name);
                 } else if (root.isUserDefined(Names.ENUM, name)) {
                     return new Enum(parent, name);
+                } else if (root.isUserDefined(Names.CONTRACT, name)) {
+                    return new Contract(parent, name);
                 } else {
                     UserDefined undefined = new UserDefined(parent, Names.UNKNOWN, name);
                     root.addDeferredTypeDefinition(undefined);
@@ -613,6 +637,10 @@ public class Ast {
 
             if (Names.ENUM.equals(name)) {
                 return new Enum(null, (String) typeProps.get("type"));
+            }
+
+            if (Names.CONTRACT.equals(name)) {
+                return new Contract(null, (String) typeProps.get("type"));
             }
 
             return null;
@@ -766,6 +794,16 @@ public class Ast {
 
             Enum(Ast.Entry parent, String type) {
                 super(parent, Names.ENUM, type);
+            }
+        }
+
+        @Data
+        @NoArgsConstructor
+        @EqualsAndHashCode(callSuper = true)
+        public static class Contract extends UserDefined {
+
+            Contract(Ast.Entry parent, String type) {
+                super(parent, Names.CONTRACT, type);
             }
         }
     }

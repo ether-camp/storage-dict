@@ -607,6 +607,8 @@ public class StorageDictionary {
         for (DataWord hash : hashFilter) {
             List<PathElement> path = new ArrayList<>();
             PathElement pathElement = get(hash.getData());
+            if (pathElement == null) continue;
+
             while (!pathElement.is(PathElement.Type.Root)) {
                 path.add(0, pathElement.copyLight());
                 pathElement = pathElement.getParent();

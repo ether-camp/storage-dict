@@ -1,19 +1,143 @@
 package com.ethercamp.storagedict;
 
+import com.ethercamp.storagedict.concept.Path;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.StringTokenizer;
+import java.util.function.Function;
+
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.collections4.CollectionUtils.size;
+import static org.spongycastle.util.encoders.Hex.decode;
 
 /**
  * Created by Anton Nashatyrev on 10.09.2015.
  */
 public class StorageDictionaryTest {
     private static final Logger logger = LoggerFactory.getLogger("test");
+    public static final ObjectMapper MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
+    @Test
+    public void test() throws IOException {
+        InputStream is = Files.newInputStream(Paths.get("/home/eshevchenko/temp/contracts/live", "DAO.ast"));
+        Ast ast = Ast.parse(is);
+        String dataMembers = MAPPER.writeValueAsString(ast.getContractAllDataMembers("DAO"));
+
+
+        ContractData contractData = ContractData.parse(dataMembers);
+        System.out.println(MAPPER.writeValueAsString(contractData));
+
+        StorageDictionary dictionary = StorageDictionaryDb.INST.get(StorageDictionaryDb.Layout.Solidity, decode("aeef46db4855e25702f8237e8f403fddcaf931c0"));
+        List<StorageEntry> entries = mapStorageEntries(contractData, dictionary, new Path(), pathElement -> null, new Pageable(0, 100));
+
+        System.out.println(MAPPER.writeValueAsString(entries));
+    }
+
+    private static class Pageable {
+
+        private final int pageNum;
+        private final int pageSize;
+
+        public Pageable(int pageNum, int pageSize) {
+            this.pageNum = pageNum;
+            this.pageSize = pageSize;
+        }
+
+        public int getOffset() {
+            return pageNum * pageSize;
+        }
+
+        public int getPageSize() {
+            return pageSize;
+        }
+    }
+
+    protected static <T> List<T> subList(List<T> elements, Pageable pageable, int total) {
+        int fromIndex = max(pageable.getOffset(), 0);
+        int toIndex = min(total, pageable.getOffset() + pageable.getPageSize());
+
+        return (fromIndex < toIndex)
+                ? elements.subList(fromIndex, toIndex)
+                : emptyList();
+    }
+
+    private static List<StorageEntry> mapStorageEntries(ContractData contractData, StorageDictionary dictionary, Path path,
+                                                        Function<StorageDictionary.PathElement, DataWord> valueExtractor, Pageable pageable) {
+
+        int total;
+        List<StorageEntry> entries;
+
+        if (path.isEmpty()) {
+
+            List<ContractData.Member> members = contractData.getMembers();
+            total = size(members);
+            StorageDictionary.PathElement parent = dictionary.getByPath(ArrayUtils.EMPTY_STRING_ARRAY);
+
+            entries = subList(members, pageable, total).stream()
+                    .map(member -> {
+                        StorageDictionary.PathElement pathElement = parent.findChildByKey(member.getIndex());
+                        if (member.getType().isStaticArray()) {
+                            List<StorageDictionary.PathElement> children = parent.getStaticArrayElements(member.index(), member.getType().asArray().getSize());
+                            if (pathElement == null) {
+                                pathElement = new StorageDictionary.PathElement();
+                                pathElement.key = member.getIndex();
+                            }
+                            pathElement.childrenCount = size(children);
+                        }
+                        return StorageEntry.dataMember(contractData, member, pathElement, valueExtractor);
+                    })
+                    .collect(toList());
+        } else {
+
+            final ContractData.PathElementType pet = contractData.elementTypeByPath(path);
+            List<StorageDictionary.PathElement> children = pet.getChildren(dictionary);
+
+            if (pet.getType().isStruct()) {
+
+                List<ContractData.Member> fields = contractData.getStructureFields(pet.getType());
+                total = size(fields);
+                entries = subList(fields, pageable, total).stream()
+                        .map(field -> {
+                            StorageDictionary.PathElement pathElement = children.stream()
+                                    .filter(child -> StringUtils.equals(field.getIndex(), child.key))
+                                    .findFirst()
+                                    .orElse(null);
+
+                            return StorageEntry.structField(contractData, pet, field, pathElement, valueExtractor);
+                        })
+                        .collect(toList());
+
+            } else {
+
+                total = size(children);
+                entries = subList(children, pageable, total).stream()
+                        .map(el -> StorageEntry.containerItem(contractData, pet, el, valueExtractor))
+                        .collect(toList());
+            }
+        }
+
+
+        return entries;
+    }
     //    @Test
 //    public void simpleTest() throws Exception {
 //        StorageDictionary kp = new StorageDictionary();

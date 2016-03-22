@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.spongycastle.util.encoders.Hex;
 
 import java.util.*;
 import java.util.function.Function;
@@ -13,6 +14,8 @@ import java.util.function.Supplier;
 
 import static java.lang.String.format;
 import static org.apache.commons.collections4.CollectionUtils.size;
+import static org.apache.commons.lang3.ArrayUtils.getLength;
+import static org.apache.commons.lang3.ArrayUtils.subarray;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -105,9 +108,10 @@ public class StorageValue {
     private int size;
 
     private boolean decoded;
+    private String kind;
 
     public StorageValue(DataWord value, Type type, int size) {
-        this.raw = (value == null) ? EMPTY : value.toString();
+        this.raw = Objects.toString(value, EMPTY);
         this.type = type.name();
         this.value = formatAs(type, value);
 /*
@@ -164,7 +168,8 @@ public class StorageValue {
         StorageValue value = new StorageValue();
         value.setDecoded(true);
         value.setType(type.formatName());
-        value.setContainer(!(type.isElementary() || type.isEnum()));
+        value.setContainer(!(type.isElementary() || type.isEnum() || type.isContract()));
+        value.setKind(type.getName());
 
         if (value.isContainer()) {
 
@@ -182,7 +187,7 @@ public class StorageValue {
 
         } else {
             DataWord rawValue = valueExtractor.apply(pathElement);
-            Supplier<byte[]> bytesSupplier = () -> (pathElement == null) ? ArrayUtils.EMPTY_BYTE_ARRAY : getStringBytes(pathElement, valueExtractor);
+            Supplier<byte[]> bytesSupplier = () -> (pathElement == null) ? ArrayUtils.EMPTY_BYTE_ARRAY : getBytes(pathElement, valueExtractor);
 
             value.setValue(convertTo(contractData, type, rawValue, bytesSupplier));
             value.setRaw(Objects.toString(rawValue, null));
@@ -191,7 +196,7 @@ public class StorageValue {
         return value;
     }
 
-    public static String convertTo(ContractData contractData, Ast.Type type, DataWord rawValue, Supplier<byte[]> strBytesSupplier) {
+    public static String convertTo(ContractData contractData, Ast.Type type, DataWord rawValue, Supplier<byte[]> bytesSupplier) {
         Object result = rawValue;
 
         if (type.isEnum()) {
@@ -199,7 +204,13 @@ public class StorageValue {
         } else if (type.isElementary()) {
             Ast.Type.Elementary elementary = type.asElementary();
             if (elementary.isString()) {
-                result = new String(strBytesSupplier.get());
+                byte[] bytes = bytesSupplier.get();
+                if (getLength(bytes) == 32) {
+                    bytes = subarray(bytes, 0, bytes.length - 1);
+                }
+                result = new String(bytes);
+            } else if (elementary.is("bytes")) {
+                result = Hex.toHexString(bytesSupplier.get());
             } else if (elementary.isBool()) {
                 result = !(rawValue == null || rawValue.isZero());
             } else if (elementary.isAddress() && rawValue != null) {
@@ -209,7 +220,7 @@ public class StorageValue {
             }
         }
 
-        return String.valueOf(result);
+        return Objects.toString(result, null);
     }
 
     public static String convertTo(ContractData contractData, Ast.Type type, String decoded) {
@@ -218,7 +229,7 @@ public class StorageValue {
         return convertTo(contractData, type, rawValue, () -> decoded.getBytes());
     }
 
-    private static byte[] getStringBytes(StorageDictionary.PathElement pathElement, Function<StorageDictionary.PathElement, DataWord> valueExtractor) {
+    private static byte[] getBytes(StorageDictionary.PathElement pathElement, Function<StorageDictionary.PathElement, DataWord> valueExtractor) {
         byte[] result;
 
         if (pathElement.hasChildren()) {

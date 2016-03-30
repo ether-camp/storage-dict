@@ -120,7 +120,7 @@ public class StorageIndexingTest extends BaseTest {
         ContractData.Element staticArray = members.get(4);
         assertEquals(1, staticArray.getChildrenCount());
         ContractData.Element staticEl1 = staticArray.getAllChildren().get(0);
-        assertEquals("1", staticEl1.getName());
+        assertEquals("1", staticEl1.getKey());
         marriageFields = staticEl1.getAllChildren();
         assertPersonEquals(marriageFields.get(0), valueExtractor, "ffffabababababababababababababababababab", "Ann-1");
         assertPersonEquals(marriageFields.get(1), valueExtractor, "ffffcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcf", "Eugene-1");

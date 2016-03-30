@@ -10,6 +10,8 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import static java.lang.Math.max;
@@ -22,6 +24,8 @@ import static org.apache.commons.lang3.math.NumberUtils.toInt;
 import static org.ethereum.util.ByteUtil.toHexString;
 
 public class ContractData {
+
+    private static final Pattern DATA_WORD_PATTERN = Pattern.compile("[0-9a-fA-f]{64}");
 
     private final Ast.Contract contract;
     private final Map<String, Members> structFields;
@@ -123,15 +127,15 @@ public class ContractData {
             return null;
         }
 
-        public String getName() {
-            throw new UnsupportedOperationException();
-        }
-
-        public DataWord getStorageValue(Function<DataWord, DataWord> valueExtractor) {
+        public String getKey() {
             throw new UnsupportedOperationException();
         }
 
         public String getValue(Function<DataWord, DataWord> valueExtractor) {
+            throw new UnsupportedOperationException();
+        }
+
+        public DataWord getStorageValue(Function<DataWord, DataWord> valueExtractor) {
             throw new UnsupportedOperationException();
         }
 
@@ -329,11 +333,16 @@ public class ContractData {
         }
 
         @Override
-        public String getName() {
+        public String getKey() {
             String result = id;
+
             if (member != null) {
                 result = member.getName();
+            } else if (getParent().getType().isMapping() && isDataWord(id)) {
+                Ast.Type type = getParent().getType().asMapping().getKeyType();
+                result = guessRawValueType(new DataWord(id), type, () -> id.getBytes()).toString();
             }
+
             return result;
         }
 
@@ -343,13 +352,7 @@ public class ContractData {
                 throw new UnsupportedOperationException("Cannot extract storage value for container element.");
             }
 
-            StorageDictionary.PathElement pathElement = toDictionaryPathElement();
-            if (pathElement == null) {
-
-                System.out.println(dictionaryPath());
-            }
-
-            DataWord key = new DataWord(pathElement.storageKey);
+            DataWord key = new DataWord(toDictionaryPathElement().storageKey);
             DataWord value = valueExtractor.apply(key);
 
             if (member != null) {
@@ -362,7 +365,29 @@ public class ContractData {
         @Override
         public String getValue(Function<DataWord, DataWord> valueExtractor) {
             DataWord rawValue = getStorageValue(valueExtractor);
+            Object typed = guessRawValueType(rawValue, type, () -> {
 
+                StorageDictionary.PathElement pathElement = toDictionaryPathElement();
+                if (pathElement.hasChildren()) {
+                    byte[][] bytes = pathElement.getChildrenStream()
+                            .map(child -> valueExtractor.apply(new DataWord(child.storageKey)))
+                            .filter(Objects::nonNull)
+                            .map(DataWord::getData)
+                            .toArray(byte[][]::new);
+
+                    if (isNotEmpty(bytes)) {
+                        return ByteUtil.merge(bytes);
+                    }
+                }
+
+                DataWord value = valueExtractor.apply(new DataWord(pathElement.storageKey));
+                return (value == null) ? EMPTY_BYTE_ARRAY : value.getData();
+            });
+
+            return Objects.toString(typed, null);
+        }
+
+        private Object guessRawValueType(DataWord rawValue, Ast.Type type, Supplier<byte[]> bytesExtractor) {
             Object result = rawValue;
 
             if (type.isEnum()) {
@@ -370,7 +395,7 @@ public class ContractData {
             } else if (type.isElementary()) {
                 Ast.Type.Elementary elementary = type.asElementary();
                 if (elementary.isString()) {
-                    byte[] bytes = bytesExtractor.apply(valueExtractor);
+                    byte[] bytes = bytesExtractor.get();
                     bytes = subarray(bytes, 0, indexOf(bytes, (byte) 0));
                     if (getLength(bytes) == 32) {
                         bytes = subarray(bytes, 0, 31);
@@ -378,7 +403,7 @@ public class ContractData {
 
                     result = new String(bytes);
                 } else if (elementary.is("bytes")) {
-                    result = Hex.toHexString(bytesExtractor.apply(valueExtractor));
+                    result = Hex.toHexString(bytesExtractor.get());
                 } else if (elementary.isBool()) {
                     result = !(rawValue == null || rawValue.isZero());
                 } else if (elementary.isAddress() && rawValue != null) {
@@ -388,32 +413,12 @@ public class ContractData {
                 }
             }
 
-            return Objects.toString(result, null);
-        }
-
-        private Function<Function<DataWord, DataWord>, byte[]> bytesExtractor = valueExtractor -> {
-            byte[] result;
-
-            StorageDictionary.PathElement pathElement = toDictionaryPathElement();
-            if (pathElement.hasChildren()) {
-                byte[][] bytes = pathElement.getChildrenStream()
-                        .map(child -> valueExtractor.apply(new DataWord(child.storageKey)))
-                        .filter(Objects::nonNull)
-                        .map(DataWord::getData)
-                        .toArray(byte[][]::new);
-
-                if (isEmpty(bytes)) {
-                    DataWord value = valueExtractor.apply(new DataWord(pathElement.storageKey));
-                    result = (value == null) ? EMPTY_BYTE_ARRAY : value.getData();
-                } else {
-                    result = ByteUtil.merge(bytes);
-                }
-            } else {
-                DataWord value = valueExtractor.apply(new DataWord(pathElement.storageKey));
-                result = (value == null) ? EMPTY_BYTE_ARRAY : value.getData();
-            }
-
             return result;
-        };
+        }
     }
+
+    private static boolean isDataWord(String input) {
+        return DATA_WORD_PATTERN.matcher(input).matches();
+    }
+
 }

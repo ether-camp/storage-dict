@@ -45,13 +45,13 @@ public class StructTest extends BaseTest {
 
         ContractData.Element wife = members.get(0);
         assertNotNull(wife);
-        assertEquals("wife", wife.getName());
+        assertEquals("wife", wife.getKey());
         assertStructEqual(wife, valueExtractor, "Angelina", "Jolie", "40", "abcdefabcdefabcdefabcdefabcdefabcdefabcd");
         assertEquals(wife, contractData.elementByPath(wife.path().parts()));
 
         ContractData.Element husband = members.get(1);
         assertNotNull(husband);
-        assertEquals("husband", husband.getName());
+        assertEquals("husband", husband.getKey());
         assertStructEqual(husband, valueExtractor, "Brad", "Pitt", "53", "1234567890123456789012345678901234567890");
         assertEquals(husband, contractData.elementByPath(husband.path().parts()));
     }

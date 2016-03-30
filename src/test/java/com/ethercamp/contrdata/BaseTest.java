@@ -140,7 +140,7 @@ public abstract class BaseTest {
 
     protected static void assertFieldEqual(ContractData.Element field, Function<DataWord, DataWord> valueExtractor, String type, String name, String value) {
         assertNotNull(field);
-        assertEquals(name, field.getName());
+        assertEquals(name, field.getKey());
         assertEquals(type, field.getType().getName());
         assertEquals(value, field.getValue(valueExtractor));
     }

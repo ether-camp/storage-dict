@@ -1,4 +1,4 @@
-package com.ethercamp.storagedict;
+package com.ethercamp.contrdata.contract;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -299,7 +299,7 @@ public class Ast {
 
     @Data
     @NoArgsConstructor
-    @EqualsAndHashCode(callSuper = true)
+    @EqualsAndHashCode
     public static class Contract extends Ast.Entry {
 
         private Entries<Inheritance> inheritances = Inheritance.entries(this);
@@ -440,7 +440,7 @@ public class Ast {
         private boolean constant;
         private Type type;
 
-        Variable(Ast.Entry parent, String name) {
+        public Variable(Ast.Entry parent, String name) {
             super(parent, name);
         }
 
@@ -489,12 +489,17 @@ public class Ast {
         }
 
         @JsonIgnore
-        protected boolean is(String typeName) {
+        public boolean is(String typeName) {
             return is(name -> StringUtils.equals(typeName, name));
         }
 
         @JsonIgnore
         public boolean isElementary() {
+            return false;
+        }
+
+        @JsonIgnore
+        public boolean isContainer() {
             return false;
         }
 
@@ -649,7 +654,7 @@ public class Ast {
         @NoArgsConstructor
         public static class Elementary extends Type {
 
-            Elementary(Ast.Entry parent, String name) {
+            public Elementary(Ast.Entry parent, String name) {
                 super(parent, name);
             }
 
@@ -688,7 +693,23 @@ public class Ast {
         @Data
         @NoArgsConstructor
         @EqualsAndHashCode(callSuper = true)
-        public static class Array extends Type {
+        public static abstract class Container extends Type {
+
+            public Container(Entry parent, String name) {
+                super(parent, name);
+            }
+
+            @Override
+            @JsonIgnore
+            public boolean isContainer() {
+                return true;
+            }
+        }
+
+        @Data
+        @NoArgsConstructor
+        @EqualsAndHashCode(callSuper = true)
+        public static class Array extends Container {
 
             private Type elementType;
             private Integer size;
@@ -726,7 +747,7 @@ public class Ast {
         @Data
         @NoArgsConstructor
         @EqualsAndHashCode(callSuper = true)
-        public static class Mapping extends Type {
+        public static class Mapping extends Container {
 
             private Type keyType;
             private Type valueType;

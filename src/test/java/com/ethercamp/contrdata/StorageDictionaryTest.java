@@ -1,143 +1,25 @@
-package com.ethercamp.storagedict;
+package com.ethercamp.contrdata;
 
-import com.ethercamp.storagedict.concept.Path;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
+import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
 import java.util.StringTokenizer;
-import java.util.function.Function;
-
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.collections4.CollectionUtils.size;
-import static org.spongycastle.util.encoders.Hex.decode;
 
 /**
  * Created by Anton Nashatyrev on 10.09.2015.
  */
-public class StorageDictionaryTest {
+public class StorageDictionaryTest extends BaseTest {
     private static final Logger logger = LoggerFactory.getLogger("test");
     public static final ObjectMapper MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-    @Test
-    public void test() throws IOException {
-        InputStream is = Files.newInputStream(Paths.get("/home/eshevchenko/temp/contracts/live", "DAO.ast"));
-        Ast ast = Ast.parse(is);
-        String dataMembers = MAPPER.writeValueAsString(ast.getContractAllDataMembers("DAO"));
-
-
-        ContractData contractData = ContractData.parse(dataMembers);
-        System.out.println(MAPPER.writeValueAsString(contractData));
-
-        StorageDictionary dictionary = StorageDictionaryDb.INST.get(StorageDictionaryDb.Layout.Solidity, decode("aeef46db4855e25702f8237e8f403fddcaf931c0"));
-        List<StorageEntry> entries = mapStorageEntries(contractData, dictionary, new Path(), pathElement -> null, new Pageable(0, 100));
-
-        System.out.println(MAPPER.writeValueAsString(entries));
-    }
-
-    private static class Pageable {
-
-        private final int pageNum;
-        private final int pageSize;
-
-        public Pageable(int pageNum, int pageSize) {
-            this.pageNum = pageNum;
-            this.pageSize = pageSize;
-        }
-
-        public int getOffset() {
-            return pageNum * pageSize;
-        }
-
-        public int getPageSize() {
-            return pageSize;
-        }
-    }
-
-    protected static <T> List<T> subList(List<T> elements, Pageable pageable, int total) {
-        int fromIndex = max(pageable.getOffset(), 0);
-        int toIndex = min(total, pageable.getOffset() + pageable.getPageSize());
-
-        return (fromIndex < toIndex)
-                ? elements.subList(fromIndex, toIndex)
-                : emptyList();
-    }
-
-    private static List<StorageEntry> mapStorageEntries(ContractData contractData, StorageDictionary dictionary, Path path,
-                                                        Function<StorageDictionary.PathElement, DataWord> valueExtractor, Pageable pageable) {
-
-        int total;
-        List<StorageEntry> entries;
-
-        if (path.isEmpty()) {
-
-            List<ContractData.Member> members = contractData.getMembers();
-            total = size(members);
-            StorageDictionary.PathElement parent = dictionary.getByPath(ArrayUtils.EMPTY_STRING_ARRAY);
-
-            entries = subList(members, pageable, total).stream()
-                    .map(member -> {
-                        StorageDictionary.PathElement pathElement = parent.findChildByKey(member.getIndex());
-                        if (member.getType().isStaticArray()) {
-                            List<StorageDictionary.PathElement> children = parent.getStaticArrayElements(member.index(), member.getType().asArray().getSize());
-                            if (pathElement == null) {
-                                pathElement = new StorageDictionary.PathElement();
-                                pathElement.key = member.getIndex();
-                            }
-                            pathElement.childrenCount = size(children);
-                        }
-                        return StorageEntry.dataMember(contractData, member, pathElement, valueExtractor);
-                    })
-                    .collect(toList());
-        } else {
-
-            final ContractData.PathElementType pet = contractData.elementTypeByPath(path);
-            List<StorageDictionary.PathElement> children = pet.getChildren(dictionary);
-
-            if (pet.getType().isStruct()) {
-
-                List<ContractData.Member> fields = contractData.getStructureFields(pet.getType());
-                total = size(fields);
-                entries = subList(fields, pageable, total).stream()
-                        .map(field -> {
-                            StorageDictionary.PathElement pathElement = children.stream()
-                                    .filter(child -> StringUtils.equals(field.getIndex(), child.key))
-                                    .findFirst()
-                                    .orElse(null);
-
-                            return StorageEntry.structField(contractData, pet, field, pathElement, valueExtractor);
-                        })
-                        .collect(toList());
-
-            } else {
-
-                total = size(children);
-                entries = subList(children, pageable, total).stream()
-                        .map(el -> StorageEntry.containerItem(contractData, pet, el, valueExtractor))
-                        .collect(toList());
-            }
-        }
-
-
-        return entries;
-    }
     //    @Test
 //    public void simpleTest() throws Exception {
 //        StorageDictionary kp = new StorageDictionary();
@@ -165,37 +47,37 @@ public class StorageDictionaryTest {
 //        kp.addPath(new DataWord("1114"), createPath("a/b2/c1"));
 //        logger.info(kp.dump());
 //
-//        StorageDictionaryDb db = StorageDictionaryDb.INST;
-////        StorageDictionaryDb db = new StorageDictionaryDb();
-////        db.mapDBFactory = new MapDBFactoryImpl();
-////        db.init();
+//        StorageDictionaryDb dictDb = StorageDictionaryDb.INST;
+////        StorageDictionaryDb dictDb = new StorageDictionaryDb();
+////        dictDb.mapDBFactory = new MapDBFactoryImpl();
+////        dictDb.init();
 //
 //        byte[] contractAddr = Hex.decode("abcdef");
 //        Assert.assertFalse(kp.isValid());
 //
-//        db.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
+//        dictDb.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
 //
 //        Assert.assertTrue(kp.isValid());
 //        kp.addPath(new DataWord("1114"), createPath("a/b2/c1"));
 //
 //        Assert.assertTrue(kp.isValid());
-//        db.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
+//        dictDb.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
 //
 //        kp.addPath(new DataWord("1115"), createPath("a/b2/c2"));
 //        kp.addPath(new DataWord("1115"), createPath("a/b2/c3"));
 //
-//        db.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
+//        dictDb.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
 //
-//        db.close();
-//        db.init();
+//        dictDb.close();
+//        dictDb.init();
 //
-//        StorageDictionary kp1 = db.get(StorageDictionaryDb.Layout.Solidity, contractAddr);
+//        StorageDictionary kp1 = dictDb.get(StorageDictionaryDb.Layout.Solidity, contractAddr);
 //
 //        logger.info(kp1.dump());
 //
 //        Assert.assertEquals(kp.root, kp1.root);
-//        db.close();
-//        db.init();
+//        dictDb.close();
+//        dictDb.init();
 //    }
 //
 //    @Test
@@ -248,7 +130,7 @@ public class StorageDictionaryTest {
 //
 //    @Test
 //    public void compactFilterTest() throws Exception {
-//        StorageDictionary dict = StorageDictionary.deserializeFromJson(getClass().getResourceAsStream("/db/StorageDictionaryTest_1.json"));
+//        StorageDictionary dict = StorageDictionary.deserializeFromJson(getClass().getResourceAsStream("/dictDb/StorageDictionaryTest_1.json"));
 //        logger.info("Raw dictionary:\n" + dict.dump());
 //        StorageDictionary dictNoFilter = dict.compactAndFilter(null);
 //        logger.info("Compacted dictionary:\n" + dictNoFilter.dump());
@@ -290,8 +172,8 @@ public class StorageDictionaryTest {
 //
 ////    @Test
 //    public void dumpDB() throws Exception {
-//        StorageDictionaryDb db = StorageDictionaryDb.INST;
-//        HTreeMap<ByteArrayWrapper, StorageDictionary> table = db.getLayoutTable(StorageDictionaryDb.Layout.Solidity);
+//        StorageDictionaryDb dictDb = StorageDictionaryDb.INST;
+//        HTreeMap<ByteArrayWrapper, StorageDictionary> table = dictDb.getLayoutTable(StorageDictionaryDb.Layout.Solidity);
 //
 ////        StorageDictionary priceFeedContract = table.get(new ByteArrayWrapper(Hex.decode("672e330b81a6d6c4fb2a7cad28b3f2295efaab77")));
 ////        logger.info("priceFeedContract:\n" + priceFeedContract.dump());
@@ -302,13 +184,13 @@ public class StorageDictionaryTest {
 //            System.out.printf("======= " + e.getKey() + ":\n" + e.getValue().dump() + "\n");
 //        }
 //
-//        StorageDictionary d = db.getOrCreate(StorageDictionaryDb.Layout.Solidity, Hex.decode("de0b295669a9fd93d5f28d9ec85e40f4cb697bae"));
+//        StorageDictionary d = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, Hex.decode("de0b295669a9fd93d5f28d9ec85e40f4cb697bae"));
 //        System.out.println(d.dump());
 //        System.out.println(d.serializeToJson());
 //
 ////        StorageDictionary kp = new StorageDictionary();
 ////        kp.addPath(new DataWord("1111"), createPath("a/b1/c1"));
-////        db.put(StorageDictionaryDb.Layout.Solidity, Hex.decode("abcdef"), kp);
+////        dictDb.put(StorageDictionaryDb.Layout.Solidity, Hex.decode("abcdef"), kp);
 //    }
 //
 ////    @Test
@@ -320,10 +202,10 @@ public class StorageDictionaryTest {
 //        kp.addPath(new DataWord("1114"), createPath("a/b2/c1"));
 //        logger.info(kp.dump());
 //
-//        StorageDictionaryDb db = StorageDictionaryDb.INST;
-////        StorageDictionaryDb db = new StorageDictionaryDb();
-////        db.mapDBFactory = new MapDBFactoryImpl();
-////        db.init();
+//        StorageDictionaryDb dictDb = StorageDictionaryDb.INST;
+////        StorageDictionaryDb dictDb = new StorageDictionaryDb();
+////        dictDb.mapDBFactory = new MapDBFactoryImpl();
+////        dictDb.init();
 //
 //        byte[] contractAddr = Hex.decode("abcdef");
 //        Assert.assertFalse(kp.isValid());
@@ -332,11 +214,15 @@ public class StorageDictionaryTest {
 //        while(true) {
 //            kp.addPath(new DataWord("1114"), createPath("a/b2/c" + (cnt++)));
 //            contractAddr[0]++;
-//            db.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
-//            db.put(StorageDictionaryDb.Layout.Serpent, contractAddr, kp);
+//            dictDb.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
+//            dictDb.put(StorageDictionaryDb.Layout.Serpent, contractAddr, kp);
 //        }
 //    }
 //
+
+    @Autowired
+    private StorageDictionaryDb db;
+
     static StorageDictionary.PathElement[] createPath(String s) {
         StringTokenizer st = new StringTokenizer(s, "/");
         StorageDictionary.PathElement[] ret = new StorageDictionary.PathElement[st.countTokens()];
@@ -353,7 +239,6 @@ public class StorageDictionaryTest {
     public void largeStorageTest() throws Exception {
 
         for (int k = 0; k < 50; k++) {
-            StorageDictionaryDb db = StorageDictionaryDb.INST;
             byte[] contractAddr = ByteUtil.intToBytes(k);
 
             StorageDictionary kp = db.getOrCreate(StorageDictionaryDb.Layout.Solidity, contractAddr);
@@ -377,7 +262,6 @@ public class StorageDictionaryTest {
         }
 
         for (int j = 0; j < 100; j++) {
-            StorageDictionaryDb db = StorageDictionaryDb.INST;
             for (int k = 0; k < 5; k++) {
                 byte[] contractAddr = ByteUtil.intToBytes(k);
 
@@ -387,7 +271,7 @@ public class StorageDictionaryTest {
 
                     //                if (i % 1000 == 0) {
                     //                    long s = System.currentTimeMillis();
-                    //                    db.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
+                    //                    dictDb.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
                     //                    System.out.println("Put " + i + " took " + (System.currentTimeMillis() - s) + " ms");
                     //                }
                 }
@@ -422,9 +306,9 @@ public class StorageDictionaryTest {
 //
 ////    @Test
 ////    public void aa() {
-////        StorageDictionaryDb db = new StorageDictionaryDb();
-////        db.init(new File("D:\\ws\\work\\q8\\b\\storagedict"));
-////        StorageDictionary sd = db.getOrCreate(StorageDictionaryDb.Layout.Solidity, Hex.decode("99b28a25e94d4fc009d4fcbc2f6b91440afb901d"));
+////        StorageDictionaryDb dictDb = new StorageDictionaryDb();
+////        dictDb.init(new File("D:\\ws\\work\\q8\\b\\storagedict"));
+////        StorageDictionary sd = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, Hex.decode("99b28a25e94d4fc009d4fcbc2f6b91440afb901d"));
 ////        System.out.println(sd.dump());
 ////        StorageDictionary sdc = sd.compactAndFilter(null);
 ////        System.out.println(sdc.dump());

@@ -1,10 +1,12 @@
-package com.ethercamp.storagedict;
+package com.ethercamp.contrdata.storage.dictionary;
 
 import org.ethereum.datasource.CachingDataSource;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.datasource.XorDataSource;
 import org.ethereum.util.ByteUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
 
 import static org.ethereum.crypto.SHA3Helper.sha3;
 
@@ -13,6 +15,7 @@ import static org.ethereum.crypto.SHA3Helper.sha3;
  * <p>
  * Created by Anton Nashatyrev on 10.09.2015.
  */
+@Service
 public class StorageDictionaryDb {
 
     public enum Layout {
@@ -30,15 +33,12 @@ public class StorageDictionaryDb {
         }
     }
 
-    public static StorageDictionaryDb INST = new StorageDictionaryDb();
-
     private CachingDataSource db;
 
-    private StorageDictionaryDb() {
-        KeyValueDataSource db = new LevelDbDataSource("storageDict");
-        db.init();
-
-        this.db = new CachingDataSource(db);
+    @Autowired
+    @Qualifier("storageDict")
+    public void setDataSource(KeyValueDataSource dataSource) {
+        this.db = new CachingDataSource(dataSource);
     }
 
     public void flush() {

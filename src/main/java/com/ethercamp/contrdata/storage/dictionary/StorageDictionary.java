@@ -1,4 +1,4 @@
-package com.ethercamp.storagedict;
+package com.ethercamp.contrdata.storage.dictionary;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;

@@ -1,18 +1,16 @@
-package com.ethercamp.storagedict;
+package com.ethercamp.contrdata.storage.dictionary;
 
+import lombok.extern.slf4j.Slf4j;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.Utils;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.OpCode;
-import org.ethereum.vm.VMHook;
-import org.ethereum.vm.program.Program;
-import org.ethereum.vm.program.Stack;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -25,11 +23,13 @@ import java.util.Map;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.ethereum.crypto.HashUtil.sha3;
 
-/**
- * Created by Anton Nashatyrev on 04.09.2015.
- */
+@Slf4j(topic = "VM")
+@Component
+@Scope("prototype")
 public class StorageDictionaryHandler {
-    private static final Logger logger = LoggerFactory.getLogger("VM");
+
+    @Autowired
+    private StorageDictionaryDb dictionaryDb;
 
     private static class Entry {
         final DataWord hashValue;
@@ -67,7 +67,7 @@ public class StorageDictionaryHandler {
         try {
             contractAddress = ownerAddress.getLast20Bytes();
         } catch (Throwable e) {
-            logger.error("Unexpected exception: ", e);
+            log.error("Unexpected exception: ", e);
             // ignore exception to not halt VM execution
         }
     }
@@ -80,7 +80,7 @@ public class StorageDictionaryHandler {
         try {
             hashes.put(toMapKey(out.getData()), new Entry(out.clone(), in));
         } catch (Throwable e) {
-            logger.error("Unexpected exception: ", e);
+            log.error("Unexpected exception: ", e);
             // ignore exception to not halt VM execution
         }
     }
@@ -89,7 +89,7 @@ public class StorageDictionaryHandler {
         try {
             storeKeys.put(new ByteArrayWrapper(key.clone().getData()), value.clone());
         } catch (Throwable e) {
-            logger.error("Unexpected exception: ", e);
+            log.error("Unexpected exception: ", e);
             // ignore exception to not halt VM execution
         }
     }
@@ -237,11 +237,11 @@ public class StorageDictionaryHandler {
         solidityDict.store();
         serpentDict.store();
 
-        StorageDictionaryDb.INST.flush();
+        dictionaryDb.flush();
     }
 
     private StorageDictionary getDictionary(StorageDictionaryDb.Layout layout) {
-        return StorageDictionaryDb.INST.getOrCreate(layout, contractAddress);
+        return dictionaryDb.getOrCreate(layout, contractAddress);
     }
 
     private static void writeDump(ContractDetails storage, StorageDictionary serpentDict, File f) {
@@ -259,60 +259,9 @@ public class StorageDictionaryHandler {
         try {
             dumpKeys(contractDetails);
         } catch (Throwable e) {
-            logger.error("Unexpected exception: ", e);
+            log.error("Unexpected exception: ", e);
             // ignore exception to not halt VM execution
         }
     }
-
-    public static VMHook HOOK = new VMHook() {
-        java.util.Stack<StorageDictionaryHandler> handlerStack = new java.util.Stack<>();
-
-        @Override
-        public void startPlay(Program program) {
-            try {
-//                System.out.println("Start play: " + program.getOwnerAddress());
-                DataWord address = program.getOwnerAddress();
-                handlerStack.push(new StorageDictionaryHandler(address)).vmStartPlayNotify();
-            } catch (Exception e) {
-                logger.error("Error within handler: ", e);
-            }
-        }
-
-        @Override
-        public void stopPlay(Program program) {
-            try {
-//                System.out.println("Stop play: " + handler);
-                byte[] address = program.getOwnerAddress().getLast20Bytes();
-                handlerStack.pop().vmEndPlayNotify(program.getStorage().getContractDetails(address));
-            } catch (Exception e) {
-                logger.error("Error within handler: ", e);
-            }
-        }
-
-        @Override
-        public void step(Program program, OpCode opcode) {
-            try {
-                Stack stack = program.getStack();
-                switch (opcode) {
-                    case SSTORE:
-                        DataWord addr = stack.get(stack.size() - 1);
-                        DataWord value = stack.get(stack.size() - 2);
-                        handlerStack.peek().vmSStoreNotify(addr, value);
-                        break;
-                    case SHA3:
-                        DataWord memOffsetData = stack.get(stack.size() - 1);
-                        DataWord lengthData = stack.get(stack.size() - 2);
-                        byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
-                        byte[] encoded = sha3(buffer);
-                        DataWord word = new DataWord(encoded);
-                        handlerStack.peek().vmSha3Notify(buffer, word);
-                        break;
-                }
-            } catch (Exception e) {
-                logger.error("Error within handler: ", e);
-            }
-        }
-    };
-
 }
 

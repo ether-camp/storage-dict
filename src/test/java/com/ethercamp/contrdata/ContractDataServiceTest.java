@@ -17,6 +17,8 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.util.List;
 
+import static org.junit.Assert.assertNotEquals;
+
 public class ContractDataServiceTest extends BaseTest {
 
     @Autowired
@@ -43,5 +45,16 @@ public class ContractDataServiceTest extends BaseTest {
 
         entries = contractDataService.getStorageEntries(contract.getAddress(), 0, 20).getEntries();
         System.out.println(mapper.writeValueAsString(entries));
+    }
+
+    @Test
+    public void dumpTest() throws IOException {
+
+        SolidityContract contract = blockchain.submitNewContract(resourceToString(nestingTestSol));
+        blockchain.createBlock();
+        StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
+
+        assertNotEquals("{}", contractDataService.dumpStorage(contract.getAddress()));
+        assertNotEquals("{}", contractDataService.dumpDict(dictionary));
     }
 }

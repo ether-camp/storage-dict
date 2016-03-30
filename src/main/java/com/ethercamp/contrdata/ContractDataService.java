@@ -83,7 +83,7 @@ public class ContractDataService {
         try {
             return getStructuredStorageEntries(addr, path, page, size);
         } catch (Exception e) {
-            log.error("Cannot build smart contract data:\n" +
+            log.error("Cannot build contract structured storage:\n" +
                             "address: {}\n" +
                             "path: {}\n" +
                             "storage dictionary:\n{}\n" +
@@ -122,7 +122,7 @@ public class ContractDataService {
         }
     }
 
-    private String dumpDict(StorageDictionary dictionary) {
+    public String dumpDict(StorageDictionary dictionary) {
         KeyValueDataSource dictDb = dictionary.getStorageDb();
         Map<String, String> entries = dictDb.keys().stream()
                 .collect(toMap(key -> toHexString(key), key -> toHexString(dictDb.get(key))));
@@ -133,7 +133,7 @@ public class ContractDataService {
         }
     }
 
-    private String dumpStorage(byte[] address) {
+    public String dumpStorage(byte[] address) {
         Set<DataWord> keys = storage.keys(address);
         Map<DataWord, DataWord> entries = storage.entries(address, new ArrayList<>(keys));
         try {

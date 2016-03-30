@@ -372,23 +372,6 @@ public class StorageDictionary {
             return () -> getChildrenIterator();
         }
 
-        public List<PathElement> getStaticArrayElements(int arrayStartInd, int count) {
-            List<PathElement> result = new ArrayList<>();
-
-            int arrayFinishInd = arrayStartInd + count;
-            for (PathElement child : getChildren()) {
-                int arrayInd = toInt(child.key);
-                if (arrayInd >= arrayFinishInd) {
-                    break;
-                }
-                if (arrayInd >= arrayStartInd) {
-                    result.add(child);
-                }
-            }
-
-            return result;
-        }
-
         public List<PathElement> getChildren(int offset, int count) {
             List<PathElement> result = new ArrayList<>();
 

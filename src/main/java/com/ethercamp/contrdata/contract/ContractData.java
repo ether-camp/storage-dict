@@ -352,14 +352,16 @@ public class ContractData {
                 throw new UnsupportedOperationException("Cannot extract storage value for container element.");
             }
 
-            DataWord key = new DataWord(toDictionaryPathElement().storageKey);
-            DataWord value = valueExtractor.apply(key);
-
-            if (member != null) {
-                value = member.extractValue(value);
+            DataWord result = null;
+            StorageDictionary.PathElement pe = toDictionaryPathElement();
+            if (pe != null)  {
+                result = valueExtractor.apply(new DataWord(pe.storageKey));
+                if (member != null) {
+                    result = member.extractValue(result);
+                }
             }
 
-            return value;
+            return result;
         }
 
         @Override
@@ -368,6 +370,10 @@ public class ContractData {
             Object typed = guessRawValueType(rawValue, type, () -> {
 
                 StorageDictionary.PathElement pathElement = toDictionaryPathElement();
+                if (pathElement == null) {
+                    return EMPTY_BYTE_ARRAY;
+                }
+
                 if (pathElement.hasChildren()) {
                     byte[][] bytes = pathElement.getChildrenStream()
                             .map(child -> valueExtractor.apply(new DataWord(child.storageKey)))

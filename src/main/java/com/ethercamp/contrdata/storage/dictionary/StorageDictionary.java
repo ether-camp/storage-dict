@@ -3,6 +3,7 @@ package com.ethercamp.contrdata.storage.dictionary;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.datasource.HashMapDB;
@@ -620,6 +621,7 @@ public class StorageDictionary {
         return result;
     }
 
+    @Getter
     private KeyValueDataSource storageDb;
     private PathElement root;
     private boolean exist;

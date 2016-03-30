@@ -484,7 +484,7 @@ public class Ast {
         }
 
         @JsonIgnore
-        protected boolean is(Predicate<String> predicate) {
+        public boolean is(Predicate<String> predicate) {
             return predicate.test(getName());
         }
 

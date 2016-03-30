@@ -3,12 +3,19 @@ package com.ethercamp.contrdata.contract;
 import lombok.Getter;
 import org.ethereum.vm.DataWord;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static org.apache.commons.lang3.ArrayUtils.subarray;
+import static org.apache.commons.lang3.math.NumberUtils.toInt;
 
 @Getter
 public class Member {
 
-    private static final int SLOT_SIZE = 32;
+    private static final int BYTES_IN_SLOT = 32;
+    private static final int BITS_IN_BYTE = 8;
+    private static final int BITS_IN_SLOT = BITS_IN_BYTE * BYTES_IN_SLOT;
+
 
     private final Member prev;
     private final int position;
@@ -18,6 +25,8 @@ public class Member {
 
     private final ContractData contractData;
     private final int slotFreeSpace;
+    public static final Pattern BYTES_TYPE_PATTERN = Pattern.compile("^bytes(\\d{0,2})$");
+    public static final Pattern INT_TYPE_PATTERN = Pattern.compile("^u?int(\\d{0,3})$");
 
     public Member(Member prev, Ast.Variable variable, ContractData contractData) {
         this.contractData = contractData;
@@ -28,11 +37,11 @@ public class Member {
         int typeSize = size(getType());
         if (hasPrev()) {
             this.packed = getPrev().getSlotFreeSpace() >= typeSize;
-            this.slotFreeSpace = (isPacked() ? getPrev().getSlotFreeSpace() : SLOT_SIZE) - typeSize;
+            this.slotFreeSpace = (isPacked() ? getPrev().getSlotFreeSpace() : BYTES_IN_SLOT) - typeSize;
             this.position = getPrev().getPosition() + 1;
         } else {
             this.packed = false;
-            this.slotFreeSpace = SLOT_SIZE - typeSize;
+            this.slotFreeSpace = BYTES_IN_SLOT - typeSize;
             this.position = 0;
         }
     }
@@ -77,24 +86,39 @@ public class Member {
         return result;
     }
 
-    private static int size(Ast.Type type) {
-        int result = SLOT_SIZE;
-
-        if (type.isEnum()) {
-            result = 1;
-        } else if (type.is("bool")) {
-            result = 1;
-        } else if (type.is("address")) {
-            result = 20;
-        }
-
-        return result;
-    }
-
     public DataWord extractValue(DataWord slot) {
         int size = size(getType());
         int from = getSlotFreeSpace();
 
         return new DataWord(subarray(slot.getData(), from, from + size));
+    }
+
+    private static int size(Ast.Type type) {
+        int result = BYTES_IN_SLOT;
+
+        if (type.isEnum()) {
+            result = 1;
+        } else if (type.isElementary()) {
+            if (type.is("bool")) {
+                result = 1;
+            } else if (type.is("address")) {
+                result = 20;
+            } else if (type.is(name -> name.startsWith("bytes"))) {
+                result = size(type, BYTES_TYPE_PATTERN, BYTES_IN_SLOT);
+            } else if (type.is(name -> name.contains("int"))) {
+                result = size(type, INT_TYPE_PATTERN, BITS_IN_SLOT) / BITS_IN_BYTE;
+            }
+        }
+
+        return result;
+    }
+
+    private static int size(Ast.Type type, Pattern pattern, int defaultSize) {
+        int result = defaultSize;
+        Matcher matcher = pattern.matcher(type.getName());
+        if (matcher.matches()) {
+            result = toInt(matcher.group(1), defaultSize);
+        }
+        return result;
     }
 }

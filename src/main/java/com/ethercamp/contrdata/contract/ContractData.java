@@ -354,7 +354,7 @@ public class ContractData {
 
             DataWord result = null;
             StorageDictionary.PathElement pe = toDictionaryPathElement();
-            if (pe != null)  {
+            if (pe != null) {
                 result = valueExtractor.apply(new DataWord(pe.storageKey));
                 if (member != null) {
                     result = member.extractValue(result);
@@ -398,6 +398,8 @@ public class ContractData {
 
             if (type.isEnum()) {
                 result = getEnumValueByOrdinal(type.asEnum(), (rawValue == null) ? 0 : rawValue.intValue());
+            } else if (type.isContract() && rawValue != null) {
+                result = toHexString(rawValue.getLast20Bytes());
             } else if (type.isElementary()) {
                 Ast.Type.Elementary elementary = type.asElementary();
                 if (elementary.isString()) {

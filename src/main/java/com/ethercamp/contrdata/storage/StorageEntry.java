@@ -154,18 +154,16 @@ public class StorageEntry extends AbstractKeyValue implements Comparable<Storage
 
         Value.ValueBuilder value = Value.builder()
                 .type(type.formatName())
+                .typeKind(type.isUserDefined() ? type.getName() : null)
                 .container(type.isContainer());
 
         if (type.isContainer()) {
             value.size(cde.getChildrenCount());
-        } else if (type.isUserDefined()) {
-            value.typeKind(type.getName());
-        } else {
+        } else if (!type.isStruct()) {
             value
                     .encoded(Objects.toString(cde.getStorageValue(valueExtractor), null))
                     .decoded(cde.getValue(valueExtractor));
         }
-
 
         return new StorageEntry(Type.smart, key.build(), value.build());
     }

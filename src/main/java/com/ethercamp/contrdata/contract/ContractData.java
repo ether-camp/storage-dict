@@ -142,6 +142,10 @@ public class ContractData {
         public boolean isRoot() {
             return false;
         }
+
+        Member getMember() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @EqualsAndHashCode
@@ -188,6 +192,9 @@ public class ContractData {
 
         ElementImpl(String id, ElementImpl previous) {
             this(id, previous.nestedType(id), previous);
+            if (previous.getType().isStruct()) {
+                this.member = getStructFields(previous.getType().asStruct()).findByPosition(toInt(id));
+            }
         }
 
         private Ast.Type nestedType(String id) {

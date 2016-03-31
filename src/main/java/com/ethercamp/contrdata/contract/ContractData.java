@@ -269,7 +269,7 @@ public class ContractData {
                     result /= slotsPerElement;
                 }
             } else if (type.isStruct()) {
-                result = getStructFields(type.asStruct()).reservedSlotsCount();
+                result = getStructFields(type.asStruct()).size();
             }
 
             return result;

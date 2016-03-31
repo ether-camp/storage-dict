@@ -12,6 +12,7 @@ import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.vm.DataWord;
@@ -26,15 +27,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.stream.Collectors.toMap;
 import static org.ethereum.util.ByteUtil.toHexString;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
         ContractDataConfig.class, BaseTest.Config.class, StorageDictTest.Config.class
@@ -74,6 +71,7 @@ public class StorageDictTest extends BaseTest{
         private static Map<String, String> storageByAddress = new HashMap<String, String>() {{
             put("956a285faa86b212ec51ad9da0ede6c8861e3a33", "{\"0000000000000000000000000000000000000000000000000000000000000004\":\"000000000000000000000000b8c492d47ab446701786cc6d0c85e746b6e41885\",\"0000000000000000000000000000000000000000000000000000000000000000\":\"00000000000000000000000020e12a1f859b3feae5fb2a0a32c18f5a65555bbf\"}\n");
             put("a45d606fd52659ef161a45e21fff060b950612f7", "{\"0000000000000000000000000000000000000000000000000000000000000000\":\"000000000000000000000002640eb8074d09975f11d756985e4fe0863e52c393\"}\n");
+            put("7d96e318ac2a5048a2f901e65a5c1d610cfb8094", "{\"405d1087a265de75abc55579557f00cdbab73e5ae3953c584a395dab344ecd1a\":\"3078303437303335336161643136613237353830633437386561303763313933\",\"8a35acfbc15ff81a39ae7d344fd709f28e8600b4aa8c65c6b64bfe7fe36bd19b\":\"0000000000000000000043f41cdca2f6785642928bcd2265fe9aff02911a0000\",\"0000000000000000000000000000000000000000000000000000000000000004\":\"0000000000000000000000000000000000000000000000000000000000000001\",\"9225dd3fe13c7b6be982616bd0c309a57f51f065763c845653f6af7ce26fde6e\":\"0000000000000000000000000000000000000000000000000000000000000001\",\"0000000000000000000000000000000000000000000000000000000000000003\":\"6100000000000000000000000000000000000000000000000000000000000000\",\"0000000000000000000000000000000000000000000000000000000000000002\":\"00000000000000000043f41cdca2f6785642928bcd2265fe9aff02911a000106\",\"0000000000000000000000000000000000000000000000000000000000000001\":\"000000000000000002c68af0bb14000000000000000000004563918244f40000\",\"0000000000000000000000000000000000000000000000000000000000000000\":\"6100000000000000000000000000000000000000000000000000000000000000\",\"8a35acfbc15ff81a39ae7d344fd709f28e8600b4aa8c65c6b64bfe7fe36bd19c\":\"0000000000000000000000000000000000000000000000000000000000000109\",\"8a35acfbc15ff81a39ae7d344fd709f28e8600b4aa8c65c6b64bfe7fe36bd19d\":\"676f6f0000000000000000000000000000000000000000000000000000000000\",\"405d1087a265de75abc55579557f00cdbab73e5ae3953c584a395dab344ecd1d\":\"6339303665353336306536386164376333303039353835643365623538613265\",\"405d1087a265de75abc55579557f00cdbab73e5ae3953c584a395dab344ecd1e\":\"3430326200000000000000000000000000000000000000000000000000000000\",\"405d1087a265de75abc55579557f00cdbab73e5ae3953c584a395dab344ecd1b\":\"3531386531353162653934316439646333333032356366343865393439633261\",\"405d1087a265de75abc55579557f00cdbab73e5ae3953c584a395dab344ecd1c\":\"6136366465313235383339643538343164643064643364363737666535353230\"}\n");
         }};
 
         private Map<DataWord, DataWord> storageMap(byte[] address) {
@@ -101,8 +99,6 @@ public class StorageDictTest extends BaseTest{
 
     @Value("${classpath:contracts/real/YoutubeViews.sol}")
     private Resource youtubeViewsSource;
-    @Value("${classpath:contracts/real/ProjectKudos.sol}")
-    private Resource projectKudosSource;
 
     @Test
     public void youtubeViewsTest() throws IOException {
@@ -120,6 +116,9 @@ public class StorageDictTest extends BaseTest{
         System.out.println(new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(entries));
     }
 
+    @Value("${classpath:contracts/real/ProjectKudos.sol}")
+    private Resource projectKudosSource;
+
     @Test
     public void projectKudosTest() throws IOException {
         byte[] address = Hex.decode("a45d606fd52659ef161a45e21fff060b950612f7");
@@ -134,5 +133,44 @@ public class StorageDictTest extends BaseTest{
         assertFalse(entries.isEmpty());
 
         System.out.println(new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(entries));
+    }
+
+    @Value("${classpath:contracts/real/EtherPokerTable.sol}")
+    private Resource etherPokerTableSource;
+
+    @Test
+    public void etherPokerTableTest() throws IOException {
+        byte[] address = Hex.decode("7d96e318ac2a5048a2f901e65a5c1d610cfb8094");
+
+        StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        Ast.Contract dataMembers = getContractAllDataMembers(etherPokerTableSource, "EtherPokerTable");
+
+        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), Path.of(8, 0), 0, 20);
+        List<StorageEntry> entries = storagePage.getEntries();
+
+        assertNotNull(entries);
+        assertEquals(4, entries.size());
+        assertEquals(4, storagePage.getTotal());
+
+        System.out.println(new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(storagePage));
+    }
+
+    private static class StorageTranslator extends ArrayList<StorageTranslator.Entry> {
+
+        private static final ObjectMapper MAPPER = new ObjectMapper();
+
+        static class Entry extends DefaultKeyValue<DataWord, DataWord>{
+            public String type;
+        }
+
+        public static String translate(String input) throws IOException {
+            Map<DataWord, DataWord> storageMap = MAPPER.readValue(input, StorageTranslator.class).stream().collect(toMap(Entry::getKey, Entry::getValue));
+            return MAPPER.writeValueAsString(storageMap);
+        }
+
+        public static void main(String[] args) throws IOException {
+            String input = "";
+            System.out.println(translate(input));
+        }
     }
 }

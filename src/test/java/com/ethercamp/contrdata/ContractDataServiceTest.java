@@ -37,7 +37,7 @@ public class ContractDataServiceTest extends BaseTest {
         Ast.Contract astContract = getContractAllDataMembers(nestingTestSol, "TestNestedStruct");
         StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
 
-        List<StorageEntry> entries = contractDataService.getContractData(contract.getAddress(), new ContractData(astContract, dictionary), Path.empty(), 0, 20).getEntries();
+        List<StorageEntry> entries = contractDataService.getContractData(contract.getAddress(), new ContractData(astContract, dictionary), false, Path.empty(), 0, 20).getEntries();
         System.out.println(mapper.writeValueAsString(entries));
 
         entries = contractDataService.getStorageEntries(contract.getAddress(), 0, 20).getEntries();

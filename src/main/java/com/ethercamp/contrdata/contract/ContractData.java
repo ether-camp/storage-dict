@@ -19,6 +19,7 @@ import static java.lang.Math.min;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.apache.commons.lang3.math.NumberUtils.toInt;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -111,9 +112,17 @@ public class ContractData {
             return translateToPathElement(this);
         }
 
-        public abstract int getChildrenCount();
+        public abstract int getChildrenCount(boolean ignoreEmpty);
 
-        public abstract List<Element> getChildren(int page, int size);
+        public int getChildrenCount() {
+            return getChildrenCount(false);
+        }
+
+        public abstract List<Element> getChildren(int page, int size, boolean ignoreEmpty);
+
+        public List<Element> getChildren(int page, int size) {
+            return getChildren(page, size, false);
+        }
 
         public List<Element> getAllChildren() {
             return getChildren(0, getChildrenCount());
@@ -157,15 +166,21 @@ public class ContractData {
         }
 
         @Override
-        public int getChildrenCount() {
-            return getMembers().size();
+        public int getChildrenCount(boolean ignoreEmpty) {
+            return (ignoreEmpty ? getExistedMembers() : getMembers()).size();
         }
 
         @Override
-        public List<Element> getChildren(int page, int size) {
-            return getMembers().page(page, size).stream()
+        public List<Element> getChildren(int page, int size, boolean ignoreEmpty) {
+            Members members = ignoreEmpty ? getExistedMembers() : getMembers();
+            return members.page(page, size).stream()
                     .map(member -> new ElementImpl(member, this))
                     .collect(toList());
+        }
+
+        private Members getExistedMembers() {
+            Set<Integer> storageIndexes = toDictionaryPathElement().getChildrenStream().map(pe -> toInt(pe.key)).collect(toSet());
+            return getMembers().filter(m -> storageIndexes.contains(m.getStorageIndex()));
         }
     }
 
@@ -245,7 +260,7 @@ public class ContractData {
         }
 
         @Override
-        public int getChildrenCount() {
+        public int getChildrenCount(boolean ignoreEmpty) {
             int result = 0;
 
             if (type.isContainer()) {
@@ -287,12 +302,12 @@ public class ContractData {
         }
 
         @Override
-        public List<Element> getChildren(int page, int size) {
+        public List<Element> getChildren(int page, int size, boolean ignoreEmpty) {
             List<Element> result = emptyList();
 
             int offset = page * size;
             int fromIndex = max(0, offset);
-            int toIndex = min(getChildrenCount(), offset + size);
+            int toIndex = min(getChildrenCount(ignoreEmpty), offset + size);
 
             if (fromIndex < toIndex) {
                 if (type.isStruct()) {

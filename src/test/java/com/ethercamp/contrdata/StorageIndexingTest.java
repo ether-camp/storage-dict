@@ -44,7 +44,6 @@ public class StorageIndexingTest extends BaseTest {
         assertEquals(0, mStruct.getStorageIndex());
 
         ContractData.Element mStructElement = contractData.elementByPath(mStruct.getPosition());
-        ;
         mStructElement.getChildren(0, 10).stream().forEach(field -> {
             DataWord value = field.getStorageValue(valueExtractor);
             System.out.println(value);

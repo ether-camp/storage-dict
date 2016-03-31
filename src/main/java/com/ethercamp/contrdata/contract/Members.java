@@ -9,6 +9,7 @@ import java.util.function.Predicate;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 
 public class Members extends ArrayList<Member> {
 
@@ -37,6 +38,10 @@ public class Members extends ArrayList<Member> {
 
     public int reservedSlotsCount() {
         return stream().mapToInt(Member::reservedSlotsCount).sum();
+    }
+
+    public Members filter(Predicate<? super Member> predicate) {
+        return new Members(stream().filter(predicate).collect(toList()));
     }
 
     public Members page(int page, int size) {

@@ -10,17 +10,19 @@ import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.ethereum.datasource.KeyValueDataSource;
+
+import static java.lang.String.format;
+import static java.util.stream.Collectors.joining;
 import static org.ethereum.util.ByteUtil.toHexString;
+
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -62,8 +64,7 @@ public class ContractDataService {
         return new StoragePage(entries, page, size, storageSize);
     }
 
-    public StoragePage getStructuredStorageEntries(byte[] address, Path path, int page, int size) {
-        StorageDictionary dictionary = getDictionary(address).getFiltered(storage.keys(address));
+    public StoragePage getStructuredStorageEntries(byte[] address, StorageDictionary dictionary, Path path, int page, int size) {
 
         StorageDictionary.PathElement pathElement = dictionary.getByPath(path.parts());
         List<StorageEntry> entries = pathElement
@@ -81,22 +82,39 @@ public class ContractDataService {
     public StoragePage getStructuredStorageEntries(String address, Path path, int page, int size) {
         byte[] addr = Hex.decode(address);
         try {
-            return getStructuredStorageEntries(addr, path, page, size);
+            return getStructuredStorageEntries(addr, getDictionary(addr).getFiltered(storage.keys(addr)), path, page, size);
         } catch (Exception e) {
-            log.error("Cannot build contract structured storage:\n" +
-                            "address: {}\n" +
-                            "path: {}\n" +
-                            "storage dictionary:\n{}\n" +
-                            "storage:\n{}",
-                    address, path, dumpDict(getDictionary(addr)), dumpStorage(addr));
+            log.error(DetailedMsg.withTitle("Cannot build contract structured storage:")
+                    .add("address",address)
+                    .add("path",path)
+                    .add("storage dictionary", dumpDict(getDictionary(addr)))
+                    .add("storage", dumpStorage(addr))
+                    .toString());
             throw e;
         }
     }
 
-    public StoragePage getContractData(byte[] address, ContractData contractData, Path path, int page, int size) {
+    public StoragePage getStructuredStorageDiffEntries(String txHash, String address, Path path, int page, int size) {
+        byte[] addr = Hex.decode(address);
+        try {
+            byte[] hash = Hex.decode(txHash);
+            StorageDictionary dictionary = getDictionary(addr).getFiltered(storage.keys(hash));
+            return getStructuredStorageEntries(hash, dictionary, path, page, size);
+        } catch (Exception e) {
+            log.error(DetailedMsg.withTitle("Cannot build contract structured storage:")
+                    .add("address",address)
+                    .add("transaction hash", txHash)
+                    .add("path",path)
+                    .add("storage dictionary", dumpDict(getDictionary(addr)))
+                    .add("storage", dumpStorage(addr))
+                    .toString());
+            throw e;
+        }
+    }
+
+    public StoragePage getContractData(byte[] address, ContractData contractData, boolean ignoreEmpty, Path path, int page, int size) {
         ContractData.Element element = contractData.elementByPath(path.parts());
-        List<StorageEntry> entries = element
-                .getChildren(page, size).stream()
+        List<StorageEntry> entries = element.getChildren(page, size, ignoreEmpty).stream()
                 .map(el -> StorageEntry.smart(el, key -> storage.get(address, key)))
                 .collect(toList());
 
@@ -109,16 +127,55 @@ public class ContractDataService {
         ContractData contractData = ContractData.parse(contractDataJson, dictionary);
 
         try {
-            return getContractData(addr, contractData, path, page, size);
+            return getContractData(addr, contractData, false, path, page, size);
         } catch (Exception e) {
-            log.error("Cannot build smart contract data:\n" +
-                    "address: {}\n" +
-                    "path: {}\n" +
-                    "contract data-members:\n{}\n" +
-                    "storage dictionary:\n{}\n" +
-                    "storage:\n{}",
-                    address, path, contractDataJson, dumpDict(dictionary), dumpStorage(addr));
+            log.error(DetailedMsg.withTitle("Cannot build smart contract data:")
+                    .add("address", address)
+                    .add("path", path)
+                    .add("contract data-members", contractDataJson)
+                    .add("storage dictionary", dumpDict(dictionary))
+                    .add("storage", dumpStorage(addr))
+                    .toString());
             throw e;
+        }
+    }
+
+    public StoragePage getContractDataDiff(String txHash, String address, String contractDataJson, Path path, int page, int size) {
+        byte[] hash = Hex.decode(txHash);
+        StorageDictionary dictionary = getDictionary(Hex.decode(address)).getFiltered(storage.keys(hash));
+        ContractData contractData = ContractData.parse(contractDataJson, dictionary);
+
+        try {
+            return getContractData(hash, contractData, true, path, page, size);
+        } catch (Exception e) {
+            log.error(DetailedMsg.withTitle("Cannot build smart contract data:")
+                    .add("address", address)
+                    .add("transaction hash", txHash)
+                    .add("path", path)
+                    .add("contract data-members", contractDataJson)
+                    .add("storage dictionary", dumpDict(dictionary))
+                    .add("storage", dumpStorage(hash))
+                    .toString());
+            throw e;
+        }
+    }
+
+    private static class DetailedMsg extends LinkedHashMap<String, Object> {
+
+        public static DetailedMsg withTitle(String title, Object... args) {
+            return new DetailedMsg().add(format(title, args), StringUtils.EMPTY);
+        }
+
+        public DetailedMsg add(String title, Object value) {
+            put(title, value);
+            return this;
+        }
+
+        @Override
+        public String toString() {
+            return entrySet().stream()
+                    .map(entry -> entry.getKey() + ": " + Objects.toString(entry.getValue()))
+                    .collect(joining("\n"));
         }
     }
 

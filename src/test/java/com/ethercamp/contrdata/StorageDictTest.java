@@ -110,7 +110,7 @@ public class StorageDictTest extends BaseTest{
         StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(youtubeViewsSource, "YoutubeViews");
 
-        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), Path.empty(), 0, 20);
+        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.empty(), 0, 20);
         List<StorageEntry> entries = storagePage.getEntries();
 
         assertNotNull(entries);
@@ -130,7 +130,7 @@ public class StorageDictTest extends BaseTest{
         Ast.Contract dataMembers = getContractAllDataMembers(projectKudosSource, "ProjectKudos");
 
         Path path = Path.of("3", "000000000000000000000000297e5d5d48fe9cbaa8cf2094e82e7dcb377dddff");
-        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), path, 0, 20);
+        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, path, 0, 20);
         List<StorageEntry> entries = storagePage.getEntries();
 
         assertNotNull(entries);
@@ -149,7 +149,7 @@ public class StorageDictTest extends BaseTest{
         StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(etherPokerTableSource, "EtherPokerTable");
 
-        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), Path.of(8, 0), 0, 20);
+        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(8, 0), 0, 20);
         List<StorageEntry> entries = storagePage.getEntries();
 
         assertNotNull(entries);
@@ -169,7 +169,7 @@ public class StorageDictTest extends BaseTest{
         StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(boolTestSource, "BoolTest");
 
-        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), Path.of(0), 0, 20);
+        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(0), 0, 20);
         List<StorageEntry> entries = storagePage.getEntries();
 
         assertNotNull(entries);
@@ -187,7 +187,7 @@ public class StorageDictTest extends BaseTest{
         StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(nestedStructeSource, "NestedStruct");
 
-        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), Path.of(1,1,1), 0, 20);
+        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(1,1,1), 0, 20);
         List<StorageEntry> entries = storagePage.getEntries();
 
         assertNotNull(entries);

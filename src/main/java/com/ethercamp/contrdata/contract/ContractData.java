@@ -231,7 +231,7 @@ public class ContractData {
                 } else if (parentType.isStructArray()) {
                     int fieldsCount = getStructFields(this.type.asStruct()).reservedSlotsCount();
                     part = index * fieldsCount;
-                } else if (parentType.isStruct()) {
+                } else if (parentType.isStruct() && !getParent().getParent().getType().isMapping()) {
                     Object structOffset = result.remove(result.size() - 1);
                     part = member.getStorageIndex() + (structOffset instanceof String ? toInt((String) structOffset) : (int) structOffset);
                 }

@@ -235,7 +235,7 @@ public class ContractData {
             }
 
             Element grandParent = getParent().getParent();
-            if (parentType.isStruct() && !(grandParent.isRoot() || grandParent.getType().isMapping())) {
+            if (parentType.isStruct() && (grandParent.isRoot() || !grandParent.getType().isMapping())) {
                 Object structOffset = path.remove(path.size() - 1);
                 int startIndex = member.getStorageIndex() + (structOffset instanceof String ? toInt((String) structOffset) : (int) structOffset);
                 return path.extend(startIndex);

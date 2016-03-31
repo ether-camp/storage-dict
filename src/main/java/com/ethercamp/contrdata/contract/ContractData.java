@@ -216,28 +216,32 @@ public class ContractData {
 
         @Override
         public Path dictionaryPath() {
-            Path result = getParent().dictionaryPath();
+            Path path = getParent().dictionaryPath();
 
-            Object part = id;
-            int index = toInt(id);
             if (getParent().isRoot()) {
-                part = member.getStorageIndex();
-            } else {
-
-                Ast.Type parentType = getParent().getType();
-                if (parentType.isStaticArray()) {
-                    int reservedSlotsCount = this.type.isStruct() ? getStructFields(this.type.asStruct()).reservedSlotsCount() : 1;
-                    part = toInt(result.remove(result.size() - 1)) + index * reservedSlotsCount;
-                } else if (parentType.isStructArray()) {
-                    int fieldsCount = getStructFields(this.type.asStruct()).reservedSlotsCount();
-                    part = index * fieldsCount;
-                } else if (parentType.isStruct() && !getParent().getParent().getType().isMapping()) {
-                    Object structOffset = result.remove(result.size() - 1);
-                    part = member.getStorageIndex() + (structOffset instanceof String ? toInt((String) structOffset) : (int) structOffset);
-                }
+                return path.extend(member.getStorageIndex());
             }
 
-            return result.extend(part);
+            Ast.Type parentType = getParent().getType();
+            if (parentType.isStaticArray()) {
+                int reservedSlotsCount = this.type.isStruct() ? getStructFields(this.type.asStruct()).reservedSlotsCount() : 1;
+                int startIndex = toInt(path.remove(path.size() - 1)) + toInt(id) * reservedSlotsCount;
+                return path.extend(startIndex);
+            }
+
+            if (parentType.isStructArray()) {
+                int fieldsCount = getStructFields(this.type.asStruct()).reservedSlotsCount();
+                return path.extend(toInt(id) * fieldsCount);
+            }
+
+            Element grandParent = getParent().getParent();
+            if (parentType.isStruct() && !(grandParent.isRoot() || grandParent.getType().isMapping())) {
+                Object structOffset = path.remove(path.size() - 1);
+                int startIndex = member.getStorageIndex() + (structOffset instanceof String ? toInt((String) structOffset) : (int) structOffset);
+                return path.extend(startIndex);
+            }
+
+            return path.extend(id);
         }
 
         @Override

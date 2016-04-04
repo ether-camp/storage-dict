@@ -17,7 +17,7 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertFalse;
 
 public class ContractDataServiceTest extends BaseTest {
 
@@ -54,7 +54,7 @@ public class ContractDataServiceTest extends BaseTest {
         blockchain.createBlock();
         StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
 
-        assertNotEquals("{}", contractDataService.dumpStorage(contract.getAddress()));
-        assertNotEquals("{}", contractDataService.dumpDict(dictionary));
+        assertFalse(contractDataService.storageEntries(contract.getAddress()).isEmpty());
+        assertFalse(dictionary.dmp().isEmpty());
     }
 }

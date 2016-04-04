@@ -10,13 +10,6 @@ import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.ethereum.datasource.KeyValueDataSource;
-
-import static java.lang.String.format;
-import static java.util.stream.Collectors.joining;
-import static org.ethereum.util.ByteUtil.toHexString;
-
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +19,10 @@ import java.util.*;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
 @Slf4j
 @Service
@@ -81,33 +75,34 @@ public class ContractDataService {
 
     public StoragePage getStructuredStorageEntries(String address, Path path, int page, int size) {
         byte[] addr = Hex.decode(address);
+        StorageDictionary dictionary = getDictionary(addr).getFiltered(storage.keys(addr));
         try {
-            return getStructuredStorageEntries(addr, getDictionary(addr).getFiltered(storage.keys(addr)), path, page, size);
+            return getStructuredStorageEntries(addr, dictionary, path, page, size);
         } catch (Exception e) {
             log.error(DetailedMsg.withTitle("Cannot build contract structured storage:")
                     .add("address",address)
                     .add("path",path)
-                    .add("storage dictionary", dumpDict(getDictionary(addr)))
-                    .add("storage", dumpStorage(addr))
-                    .toString());
+                    .add("storageDictionary", dictionary.dmp())
+                    .add("storage", storageEntries(addr))
+                    .toJson());
             throw e;
         }
     }
 
     public StoragePage getStructuredStorageDiffEntries(String txHash, String address, Path path, int page, int size) {
         byte[] addr = Hex.decode(address);
+        byte[] hash = Hex.decode(txHash);
+        StorageDictionary dictionary = getDictionary(addr).getFiltered(storage.keys(hash));
         try {
-            byte[] hash = Hex.decode(txHash);
-            StorageDictionary dictionary = getDictionary(addr).getFiltered(storage.keys(hash));
             return getStructuredStorageEntries(hash, dictionary, path, page, size);
         } catch (Exception e) {
             log.error(DetailedMsg.withTitle("Cannot build contract structured storage:")
                     .add("address",address)
-                    .add("transaction hash", txHash)
+                    .add("txHash", txHash)
                     .add("path",path)
-                    .add("storage dictionary", dumpDict(getDictionary(addr)))
-                    .add("storage", dumpStorage(addr))
-                    .toString());
+                    .add("storageDictionary", dictionary.dmp())
+                    .add("storage", storageEntries(addr))
+                    .toJson());
             throw e;
         }
     }
@@ -132,10 +127,10 @@ public class ContractDataService {
             log.error(DetailedMsg.withTitle("Cannot build smart contract data:")
                     .add("address", address)
                     .add("path", path)
-                    .add("contract data-members", contractDataJson)
-                    .add("storage dictionary", dumpDict(dictionary))
-                    .add("storage", dumpStorage(addr))
-                    .toString());
+                    .add("dataMembers", contractData.getContract())
+                    .add("storageDictionary", dictionary.dmp())
+                    .add("storage", storageEntries(addr))
+                    .toJson());
             throw e;
         }
     }
@@ -150,12 +145,12 @@ public class ContractDataService {
         } catch (Exception e) {
             log.error(DetailedMsg.withTitle("Cannot build smart contract data:")
                     .add("address", address)
-                    .add("transaction hash", txHash)
+                    .add("txHash", txHash)
                     .add("path", path)
-                    .add("contract data-members", contractDataJson)
-                    .add("storage dictionary", dumpDict(dictionary))
-                    .add("storage", dumpStorage(hash))
-                    .toString());
+                    .add("dataMembers", contractData.getContract())
+                    .add("storageDictionary", dictionary.dmp())
+                    .add("storage", storageEntries(hash))
+                    .toJson());
             throw e;
         }
     }
@@ -163,12 +158,20 @@ public class ContractDataService {
     private static class DetailedMsg extends LinkedHashMap<String, Object> {
 
         public static DetailedMsg withTitle(String title, Object... args) {
-            return new DetailedMsg().add(format(title, args), StringUtils.EMPTY);
+            return new DetailedMsg().add("title", format(title, args));
         }
 
         public DetailedMsg add(String title, Object value) {
             put(title, value);
             return this;
+        }
+
+        public String toJson() {
+            try {
+                return new ObjectMapper().writeValueAsString(this);
+            } catch (JsonProcessingException e) {
+                return "Cannot format JSON message cause: " + e.getMessage();
+            }
         }
 
         @Override
@@ -179,24 +182,8 @@ public class ContractDataService {
         }
     }
 
-    public String dumpDict(StorageDictionary dictionary) {
-        KeyValueDataSource dictDb = dictionary.getStorageDb();
-        Map<String, String> entries = dictDb.keys().stream()
-                .collect(toMap(key -> toHexString(key), key -> toHexString(dictDb.get(key))));
-        try {
-            return new ObjectMapper().writeValueAsString(entries);
-        } catch (JsonProcessingException e) {
-            return "Cannot storage dictionary dump ...";
-        }
-    }
-
-    public String dumpStorage(byte[] address) {
+    public Map<DataWord, DataWord> storageEntries(byte[] address) {
         Set<DataWord> keys = storage.keys(address);
-        Map<DataWord, DataWord> entries = storage.entries(address, new ArrayList<>(keys));
-        try {
-            return new ObjectMapper().writeValueAsString(entries);
-        } catch (JsonProcessingException e) {
-            return "Cannot create storage dump ...";
-        }
+        return storage.entries(address, new ArrayList<>(keys));
     }
 }

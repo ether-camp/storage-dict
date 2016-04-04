@@ -25,7 +25,6 @@ import static org.apache.commons.lang3.ArrayUtils.EMPTY_BYTE_ARRAY;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.apache.commons.lang3.StringUtils.repeat;
 import static org.apache.commons.lang3.StringUtils.substring;
-import static org.apache.commons.lang3.math.NumberUtils.toInt;
 import static org.ethereum.util.ByteUtil.*;
 import static org.spongycastle.util.encoders.Hex.toHexString;
 
@@ -651,6 +650,23 @@ public class StorageDictionary {
 
     public String dump() {
         return dump(null);
+    }
+
+    public static void dmp(PathElement el, Map<String, String> dump) {
+        dump.put(toHexString(el.getHash()), toHexString(el.serialize()));
+        el.getChildrenStream().forEach(child -> dmp(child, dump));
+    }
+
+    public Map<String, String> dmp() {
+        Map<String, String> result = new HashMap<>();
+        dmp(root, result);
+        return result;
+    }
+
+    public static StorageDictionary readDmp(Map<String, String> dump) {
+        HashMapDB storageDb = new HashMapDB();
+        dump.entrySet().stream().forEach(entry -> storageDb.put(Hex.decode(entry.getKey()), Hex.decode(entry.getValue())));
+        return new StorageDictionary(storageDb);
     }
 
     public PathElement getByPath(String... path) {

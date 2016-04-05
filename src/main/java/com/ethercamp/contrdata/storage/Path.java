@@ -1,5 +1,6 @@
 package com.ethercamp.contrdata.storage;
 
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.*;
 
+@NoArgsConstructor
 public class Path extends ArrayList<String> {
 
     private static final String SEPARATOR = "|";

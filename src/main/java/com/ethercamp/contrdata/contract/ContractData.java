@@ -72,6 +72,7 @@ public class ContractData {
         return new ContractData(contract, dictionary);
     }
 
+    @Getter
     private StorageDictionary dictionary;
     private Map<Element, StorageDictionary.PathElement> elementTranslateMap = new HashMap<>();
 

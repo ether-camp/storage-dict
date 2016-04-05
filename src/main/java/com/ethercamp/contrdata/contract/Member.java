@@ -87,6 +87,8 @@ public class Member {
     }
 
     public DataWord extractValue(DataWord slot) {
+        if (slot == null) return  null;
+
         int size = size(getType());
         int from = getSlotFreeSpace();
 

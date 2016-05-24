@@ -1,4 +1,4 @@
-package com.ethercamp.contrdata.bc;
+package com.ethercamp.contrdata.blockchain;
 
 import org.ethereum.vm.DataWord;
 
@@ -7,7 +7,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by eshevchenko on 28.03.16.
+ * Represents the contract storage which is effectively the
+ * mapping( uint256 => uint256 )
+ *
+ * Created by Anton Nashatyrev on 23.03.2016.
  */
 public interface ContractStorage {
 

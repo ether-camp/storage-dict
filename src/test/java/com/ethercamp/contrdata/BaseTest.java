@@ -1,7 +1,7 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.bc.LocalBlockchain;
-import com.ethercamp.contrdata.bc.StandaloneBlockchain;
+import com.ethercamp.contrdata.blockchain.LocalBlockchain;
+import com.ethercamp.contrdata.blockchain.StandaloneBlockchain;
 import com.ethercamp.contrdata.config.ContractDataConfig;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;

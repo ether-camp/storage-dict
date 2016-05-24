@@ -1,6 +1,6 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.bc.SolidityContract;
+import com.ethercamp.contrdata.blockchain.SolidityContract;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;

@@ -23,7 +23,7 @@ dependencies {
     compile "org.projectlombok:lombok:1.16.4"
     compile "commons-codec:commons-codec:1.10"
 
-    compile ("org.ethereum:ethereumj-core:1.1.0-stage-SNAPSHOT"){
+    compile ("org.ethereum:ethereumj-core:1.2.5-RELEASE"){
         exclude group: "log4j"
         exclude group: "org.slf4j", module: "log4j-over-slf4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
@@ -31,4 +31,5 @@ dependencies {
 
     testCompile "junit:junit:4.12"
     testCompile "org.springframework:spring-test:4.2.0.BUILD-SNAPSHOT"
+    testCompile "org.apache.httpcomponents:fluent-hc:4.5.2"
 }

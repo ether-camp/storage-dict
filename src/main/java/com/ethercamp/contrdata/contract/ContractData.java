@@ -260,6 +260,44 @@ public class ContractData {
             return path.extend(id);
         }
 
+        private List<Integer> arrIndexes() {
+            if (!type.isArray()) {
+                throw new UnsupportedOperationException("Can't get indexes for non array element.");
+            }
+
+            Set<Integer> indexes = new HashSet<>();
+
+            int slotsPerElement = 1;
+            if (type.isStructArray()) {
+                Ast.Type.Struct structType = type.asArray().getElementType().asStruct();
+                slotsPerElement = getStructFields(structType).reservedSlotsCount();
+            }
+
+            if (type.isStaticArray()) {
+                int offset = member.getStorageIndex();
+                int size = type.asArray().getSize() * slotsPerElement;
+
+                for (StorageDictionary.PathElement child : getParent().toDictionaryPathElement().getChildren()) {
+                    int current = toInt(child.key) - offset;
+
+                    if (current >= size) break;
+                    if (current < 0) continue;
+
+                    indexes.add(current / slotsPerElement);
+                }
+            } else {
+                StorageDictionary.PathElement element = toDictionaryPathElement();
+                if (element != null) {
+                    for (StorageDictionary.PathElement child : element.getChildren()) {
+                        int current = toInt(child.key);
+                        indexes.add(current / slotsPerElement);
+                    }
+                }
+            }
+
+            return indexes.stream().sorted().collect(toList());
+        }
+
         @Override
         public int getChildrenCount(boolean ignoreEmpty) {
             int result = 0;
@@ -269,31 +307,8 @@ public class ContractData {
                 if (element != null) {
                     result = element.getChildrenCount();
                 }
-
                 if (type.isArray()) {
-                    int slotsPerElement = 1;
-                    if (type.isStructArray()) {
-                        Ast.Type.Struct structType = type.asArray().getElementType().asStruct();
-                        slotsPerElement = getStructFields(structType).reservedSlotsCount();
-                    }
-
-                    if (type.isStaticArray()) {
-                        int offset = member.getStorageIndex();
-                        int size = type.asArray().getSize() * slotsPerElement;
-
-                        result = 0;
-                        for (StorageDictionary.PathElement child : getParent().toDictionaryPathElement().getChildren()) {
-                            int current = toInt(child.key);
-                            if (current >= offset + size) {
-                                break;
-                            }
-                            if (current >= offset) {
-                                result++;
-                            }
-                        }
-                    }
-
-                    result /= slotsPerElement;
+                    result = arrIndexes().size();
                 }
             } else if (type.isStruct()) {
                 result = getStructFields(type.asStruct()).size();
@@ -317,6 +332,7 @@ public class ContractData {
                             .collect(toList());
                 } else if (type.isArray()) {
 
+/*
                     IntStream indexStream;
 
                     if (type.isStaticArray()) {
@@ -344,10 +360,20 @@ public class ContractData {
                     } else {
                         indexStream = IntStream.range(fromIndex, toIndex);
                     }
+*/
 
-                    result = indexStream
-                            .mapToObj(i -> new ElementImpl(String.valueOf(i), type.asArray().getElementType(), this))
+                    result = arrIndexes().subList(fromIndex, toIndex).stream()
+                            .map(i -> new ElementImpl(String.valueOf(i), type.asArray().getElementType(), this))
                             .collect(toList());
+
+/*
+                    result = indexStream
+                            .mapToObj(i -> {
+                                String id = String.valueOf(indexes.get(i));
+                                return new ElementImpl(id, type.asArray().getElementType(), this);
+                            })
+                            .collect(toList());
+*/
 
                 } else if (type.isMapping()) {
                     result = toDictionaryPathElement().getChildren(page * size, size).stream()

@@ -1,4 +1,4 @@
-package com.ethercamp.contrdata.bc;
+package com.ethercamp.contrdata.blockchain;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.CommonConfig;
@@ -73,7 +73,8 @@ public class StandaloneBlockchain implements LocalBlockchain {
         withGenesis(GenesisLoader.loadGenesis(
                 getClass().getResourceAsStream("/genesis/genesis-light.json")));
         withGasPrice(50_000_000_000L);
-        withGasLimit(5_000_000L);
+//        withGasLimit(5_000_000_000L);
+        withGasLimit(31_415_920_000L);
         withMinerCoinbase(Hex.decode("ffffffffffffffffffffffffffffffffffffffff"));
         setSender(ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c")));
 //        withAccountBalance(txSender.getAddress(), new BigInteger("100000000000000000000000000"));
@@ -157,7 +158,7 @@ public class StandaloneBlockchain implements LocalBlockchain {
             }
             submittedTxes.clear();
             return b;
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException |ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
@@ -171,6 +172,10 @@ public class StandaloneBlockchain implements LocalBlockchain {
             track.createAccount(senderPrivateKey.getAddress());
             track.commit();
         }
+    }
+
+    public ECKey getSender() {
+        return txSender;
     }
 
     @Override
@@ -253,7 +258,7 @@ public class StandaloneBlockchain implements LocalBlockchain {
 
     private BlockchainImpl createBlockchain(Genesis genesis) {
         IndexedBlockStore blockStore = new IndexedBlockStore();
-        blockStore.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
+        blockStore.init(new HashMapDB(), new HashMapDB());
 
         Repository repository = new RepositoryImpl(new HashMapDB(), new HashMapDB());
 
@@ -263,7 +268,6 @@ public class StandaloneBlockchain implements LocalBlockchain {
         BlockchainImpl blockchain = new BlockchainImpl(
                 blockStore,
                 repository,
-                new Wallet(),
                 new AdminInfo(),
                 listener,
                 new CommonConfig().parentHeaderValidator()
@@ -309,7 +313,6 @@ public class StandaloneBlockchain implements LocalBlockchain {
         public SolidityContractImpl(String abi) {
             contract = new CallTransaction.Contract(abi);
         }
-
         public SolidityContractImpl(CompilationResult.ContractMetadata result) {
             compiled = result;
             contract = new CallTransaction.Contract(compiled.abi);
@@ -354,7 +357,7 @@ public class StandaloneBlockchain implements LocalBlockchain {
             Repository repository = getBlockchain().getRepository().getSnapshotTo(callBlock.getStateRoot()).startTracking();
 
             try {
-                TransactionExecutor executor = new TransactionExecutor
+                org.ethereum.core.TransactionExecutor executor = new org.ethereum.core.TransactionExecutor
                         (tx, callBlock.getCoinbase(), repository, getBlockchain().getBlockStore(),
                                 getBlockchain().getProgramInvokeFactory(), callBlock)
                         .setLocalCall(true);
@@ -384,9 +387,16 @@ public class StandaloneBlockchain implements LocalBlockchain {
         public String getBinary() {
             return compiled.bin;
         }
+
+        @Override
+        public void call(byte[] callData) {
+            // for this we need cleaner separation of EasyBlockchain to
+            // Abstract and Solidity specific
+            throw new UnsupportedOperationException();
+        }
     }
 
-    class SolidityStorageImpl implements SolidityStorage {
+    class SolidityStorageImpl implements com.ethercamp.contrdata.blockchain.SolidityStorage {
 
         private final ContractDetails details;
 

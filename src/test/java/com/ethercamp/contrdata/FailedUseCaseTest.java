@@ -3,7 +3,6 @@ package com.ethercamp.contrdata;
 import com.ethercamp.contrdata.config.ContractDataConfig;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Storage;
-import com.ethercamp.contrdata.storage.StoragePage;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.datasource.HashMapDB;

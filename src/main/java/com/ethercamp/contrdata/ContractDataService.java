@@ -15,14 +15,11 @@ import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.*;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.String.format;
-import static java.time.Duration.between;
-import static java.time.Instant.now;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -62,13 +59,12 @@ public class ContractDataService {
         return new StoragePage(entries, page, size, storageSize);
     }
 
-    private StorageDictionary getFilteredDictionary(byte[] address, Set<DataWord> keys) {
-        Instant start = now();
-        try {
-            return dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address).getFiltered(keys);
-        } finally {
-            log.info("getFilteredDictionary execution took {} ms", between(start, now()).toMillis());
-        }
+    private StorageDictionary getDictionary(byte[] address) {
+        return dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+    }
+
+    private StorageDictionary getDictionary(byte[] address, Set<DataWord> hashFilter) {
+        return getDictionary(address).getFiltered(hashFilter);
     }
 
     public StoragePage getStructuredStorageEntries(byte[] address, StorageDictionary dictionary, Path path, int page, int size) {
@@ -94,7 +90,7 @@ public class ContractDataService {
 
     public StoragePage getStructuredStorageEntries(String address, Path path, int page, int size) {
         byte[] addr = Hex.decode(address);
-        StorageDictionary dictionary = getFilteredDictionary(addr, storage.keys(addr));
+        StorageDictionary dictionary = getDictionary(addr);
 
         return getStructuredStorageEntries(addr, dictionary, path, page, size);
     }
@@ -102,13 +98,12 @@ public class ContractDataService {
     public StoragePage getStructuredStorageDiffEntries(String transactionHash, String address, Path path, int page, int size) {
         byte[] contractAddress = Hex.decode(address);
         byte[] txHash = Hex.decode(transactionHash);
-        StorageDictionary dictionary = getFilteredDictionary(contractAddress, storage.keys(txHash));
+        StorageDictionary dictionary = getDictionary(contractAddress, storage.keys(txHash));
 
         return getStructuredStorageEntries(txHash, dictionary, path, page, size);
     }
 
     public StoragePage getContractData(byte[] address, ContractData contractData, boolean ignoreEmpty, Path path, int page, int size) {
-        Instant start = now();
         try {
             ContractData.Element element = contractData.elementByPath(path.parts());
             List<StorageEntry> entries = element.getChildren(page, size, ignoreEmpty).stream()
@@ -125,14 +120,12 @@ public class ContractDataService {
                     .add("storage", storageEntries(address))
                     .toJson());
             throw e;
-        } finally {
-            log.info("getContractData execution took {} ms", between(start, now()).toMillis());
         }
     }
 
     public StoragePage getContractData(String address, String contractDataJson, Path path, int page, int size) {
         byte[] contractAddress = Hex.decode(address);
-        StorageDictionary dictionary = getFilteredDictionary(contractAddress, storage.keys(contractAddress));
+        StorageDictionary dictionary = getDictionary(contractAddress);
         ContractData contractData = ContractData.parse(contractDataJson, dictionary);
 
         return getContractData(contractAddress, contractData, false, path, page, size);
@@ -141,7 +134,7 @@ public class ContractDataService {
     public StoragePage getContractDataDiff(String transactionHash, String address, String contractDataJson, Path path, int page, int size) {
         byte[] contractAddress = Hex.decode(address);
         byte[] txHash = Hex.decode(transactionHash);
-        StorageDictionary dictionary = getFilteredDictionary(contractAddress, storage.keys(txHash));
+        StorageDictionary dictionary = getDictionary(contractAddress, storage.keys(txHash));
         ContractData contractData = ContractData.parse(contractDataJson, dictionary);
 
         return getContractData(txHash, contractData, true, path, page, size);

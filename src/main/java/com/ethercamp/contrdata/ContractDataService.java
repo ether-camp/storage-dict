@@ -15,17 +15,20 @@ import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.*;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.String.format;
+import static java.time.Duration.between;
+import static java.time.Instant.now;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.ethereum.util.ByteUtil.toHexString;
 
-@Slf4j
+@Slf4j(topic = "contract-data")
 @Service
 public class ContractDataService {
 
@@ -60,7 +63,12 @@ public class ContractDataService {
     }
 
     private StorageDictionary getFilteredDictionary(byte[] address, Set<DataWord> keys) {
-        return dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address).getFiltered(keys);
+        Instant start = now();
+        try {
+            return dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address).getFiltered(keys);
+        } finally {
+            log.info("getFilteredDictionary execution took {} ms", between(start, now()).toMillis());
+        }
     }
 
     public StoragePage getStructuredStorageEntries(byte[] address, StorageDictionary dictionary, Path path, int page, int size) {
@@ -100,6 +108,7 @@ public class ContractDataService {
     }
 
     public StoragePage getContractData(byte[] address, ContractData contractData, boolean ignoreEmpty, Path path, int page, int size) {
+        Instant start = now();
         try {
             ContractData.Element element = contractData.elementByPath(path.parts());
             List<StorageEntry> entries = element.getChildren(page, size, ignoreEmpty).stream()
@@ -116,6 +125,8 @@ public class ContractDataService {
                     .add("storage", storageEntries(address))
                     .toJson());
             throw e;
+        } finally {
+            log.info("getContractData execution took {} ms", between(start, now()).toMillis());
         }
     }
 

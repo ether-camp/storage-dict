@@ -199,7 +199,7 @@ public class StorageDictionaryHandler {
             serpentDict.addPath(getKeyOriginSerpent(key.getData()));
         }
 
-        if (SystemProperties.CONFIG.getConfig().hasPath("vm.structured.storage.dictionary.dump")) {
+        if (SystemProperties.getDefault().getConfig().hasPath("vm.structured.storage.dictionary.dump")) {
 
             String contractAddress = Hex.toHexString(this.contractAddress);
             File dumpDir = new File("json");

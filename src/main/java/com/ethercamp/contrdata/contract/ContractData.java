@@ -331,50 +331,9 @@ public class ContractData {
                             .map(field -> new ElementImpl(field, this))
                             .collect(toList());
                 } else if (type.isArray()) {
-
-/*
-                    IntStream indexStream;
-
-                    if (type.isStaticArray()) {
-
-                        int slotsPerElement = 1;
-                        if (type.isStructArray()) {
-                            Ast.Type.Struct structType = type.asArray().getElementType().asStruct();
-                            slotsPerElement = getStructFields(structType).reservedSlotsCount();
-                        }
-
-                        int startIndex = member.getStorageIndex();
-                        int reservedSlotsCount = type.asArray().getSize() * slotsPerElement;
-
-                        List<Integer> indexes = new ArrayList<>();
-                        for (StorageDictionary.PathElement child : getParent().toDictionaryPathElement().getChildren()) {
-                            int index = toInt(child.key) - startIndex;
-                            if (index >= reservedSlotsCount) break;
-
-                            if (index >= 0 && (index % slotsPerElement == 0)) {
-                                indexes.add(index / slotsPerElement);
-                            }
-                        }
-
-                        indexStream = indexes.subList(fromIndex, toIndex).stream().mapToInt(Integer::intValue);
-                    } else {
-                        indexStream = IntStream.range(fromIndex, toIndex);
-                    }
-*/
-
                     result = arrIndexes().subList(fromIndex, toIndex).stream()
                             .map(i -> new ElementImpl(String.valueOf(i), type.asArray().getElementType(), this))
                             .collect(toList());
-
-/*
-                    result = indexStream
-                            .mapToObj(i -> {
-                                String id = String.valueOf(indexes.get(i));
-                                return new ElementImpl(id, type.asArray().getElementType(), this);
-                            })
-                            .collect(toList());
-*/
-
                 } else if (type.isMapping()) {
                     result = toDictionaryPathElement().getChildren(page * size, size).stream()
                             .map(pe -> new ElementImpl(pe.key, this))

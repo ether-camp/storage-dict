@@ -74,9 +74,9 @@ public class DaoTest extends BaseTest {
     @Configuration
     static class Config {
 
-        public static final String DAO_ADDRESS = "aeef46db4855e25702f8237e8f403fddcaf931c0";
 //        public static final String DAO_ADDRESS = "aeef46db4855e25702f8237e8f403fddcaf931c0";
-//        public static final String DAO_ADDRESS = "bb9bc244d798123fde783fcc1c72d3bb8c189413";
+//        public static final String DAO_ADDRESS = "aeef46db4855e25702f8237e8f403fddcaf931c0";
+        public static final String DAO_ADDRESS = "bb9bc244d798123fde783fcc1c72d3bb8c189413";
         public static final String STORAGE_DIR = "/home/eshevchenko/projects/git/storage-dict/database/storage";
 
         private static Map<DataWord, DataWord> loadLiveStorage(String address) throws IOException {

@@ -1,7 +1,7 @@
 package com.ethercamp.contrdata.blockchain;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.ethereum.config.CommonConfig;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
@@ -11,7 +11,6 @@ import org.ethereum.db.ContractDetails;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.RepositoryImpl;
 import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.mine.Ethash;
 import org.ethereum.solidity.compiler.CompilationResult;
 import org.ethereum.solidity.compiler.SolidityCompiler;
@@ -151,14 +150,14 @@ public class StandaloneBlockchain implements LocalBlockchain {
                 txes.add(transaction);
             }
             Block b = getBlockchain().createNewBlock(parent, txes, Collections.EMPTY_LIST);
-            Ethash.getForBlock(b.getNumber()).mineLight(b).get();
+            Ethash.getForBlock(SystemProperties.getDefault(), b.getNumber()).mineLight(b).get();
             ImportResult importResult = getBlockchain().tryToConnect(b);
             if (importResult != ImportResult.IMPORTED_BEST && importResult != ImportResult.IMPORTED_NOT_BEST) {
                 throw new RuntimeException("Invalid block import result " + importResult + " for block " + b);
             }
             submittedTxes.clear();
             return b;
-        } catch (InterruptedException |ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
@@ -265,13 +264,7 @@ public class StandaloneBlockchain implements LocalBlockchain {
         ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         EthereumListenerAdapter listener = new EthereumListenerAdapter();
 
-        BlockchainImpl blockchain = new BlockchainImpl(
-                blockStore,
-                repository,
-                new AdminInfo(),
-                listener,
-                new CommonConfig().parentHeaderValidator()
-        );
+        BlockchainImpl blockchain = new BlockchainImpl(blockStore, repository);
         blockchain.setParentHeaderValidator(new DependentBlockHeaderRuleAdapter());
         blockchain.setProgramInvokeFactory(programInvokeFactory);
         programInvokeFactory.setBlockchain(blockchain);
@@ -313,6 +306,7 @@ public class StandaloneBlockchain implements LocalBlockchain {
         public SolidityContractImpl(String abi) {
             contract = new CallTransaction.Contract(abi);
         }
+
         public SolidityContractImpl(CompilationResult.ContractMetadata result) {
             compiled = result;
             contract = new CallTransaction.Contract(compiled.abi);

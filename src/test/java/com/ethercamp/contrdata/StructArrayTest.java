@@ -81,4 +81,24 @@ public class StructArrayTest extends BaseTest {
                 .sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
                 .forEach(System.out::println);
     }
+
+
+    private String removedFieldsSrc;
+
+    @Value("${classpath:contracts/RemovedFields.sol}")
+    public void setRemovedFieldsSrc(Resource contractSource) throws IOException {
+        this.removedFieldsSrc = resourceToString(contractSource);
+    }
+
+    @Test
+    public void testRemovedFields() throws IOException {
+        SolidityContract contract = blockchain.submitNewContract(removedFieldsSrc);
+        blockchain.createBlock();
+
+        Ast.Contract contractAst = getContractAllDataMembers(removedFieldsSrc, "RemovedFields");
+        StoragePage page = contractDataService.getContractData(toHexString(contract.getAddress()), contractAst.toJson(), Path.of(0), 0, 100);
+
+        System.out.println(new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(page));
+    }
+
 }

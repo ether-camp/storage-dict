@@ -2,7 +2,6 @@ package com.ethercamp.contrdata.storage.dictionary;
 
 import lombok.extern.slf4j.Slf4j;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.Utils;
@@ -112,7 +111,7 @@ public class StorageDictionaryHandler {
                 int pathLength = entry.input.length / 32;
                 StorageDictionary.PathElement[] ret = new StorageDictionary.PathElement[pathLength];
                 for (int i = 0; i < ret.length; i++) {
-                    byte[] storageKey = SHA3Helper.sha3(entry.input, 0, (i + 1) * 32);
+                    byte[] storageKey = sha3(entry.input, 0, (i + 1) * 32);
                     ret[i] = guessPathElement(Arrays.copyOfRange(entry.input, i * 32, (i + 1) * 32), storageKey)[0];
                     ret[i].type = StorageDictionary.PathElement.Type.MapKey;
                 }

@@ -4,7 +4,6 @@ import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.util.ByteUtil;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -12,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.StringTokenizer;
+
+import static org.ethereum.crypto.HashUtil.sha3;
 
 /**
  * Created by Anton Nashatyrev on 10.09.2015.
@@ -230,7 +231,7 @@ public class StorageDictionaryTest extends BaseTest {
         for (int i = 0; i < ret.length; i++) {
             String s1 = st.nextToken();
             fullPath += s1;
-            ret[i] = StorageDictionary.PathElement.createMapKey(s1, SHA3Helper.sha3(fullPath.getBytes()));
+            ret[i] = StorageDictionary.PathElement.createMapKey(s1, sha3(fullPath.getBytes()));
         }
         return ret;
     }

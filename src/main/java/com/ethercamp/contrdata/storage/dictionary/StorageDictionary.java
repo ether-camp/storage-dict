@@ -228,8 +228,19 @@ public class StorageDictionary {
             } else {
                 PathElement insertAfter = null;
                 Iterator<PathElement> chIt = getChildrenIterator();
+
+                List<PathElement> prevs = new ArrayList<>();
+                boolean hasLoop = false;
+
                 while (chIt.hasNext()) {
                     PathElement next = chIt.next();
+                    for (PathElement prev : prevs) {
+                        hasLoop = (prev.compareTo(next) == 0);
+                        if (hasLoop) break;
+                    }
+                    if (hasLoop) break;
+                    prevs.add(next);
+
                     if (newChild.compareTo(next) < 0) {
                         break;
                     }

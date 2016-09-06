@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.HashUtil.sha3;
 
 /**
  * DB managing the Layout => Contract => StorageDictionary mapping

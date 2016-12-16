@@ -1,9 +1,10 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.blockchain.SolidityContract;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
+import org.ethereum.db.ContractDetails;
+import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,7 +35,8 @@ public class StructTest extends BaseTest {
 
         Ast.Contract astContract = getContractAllDataMembers(contractSource, "TestStruct");
 
-        Function<DataWord, DataWord> valueExtractor = key -> contract.getStorage().get(key);
+        ContractDetails contractDetails = blockchain.getBlockchain().getRepository().getContractDetails(contract.getAddress());
+        Function<DataWord, DataWord> valueExtractor = key -> contractDetails.get(key);
         ContractData contractData = new ContractData(astContract, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
 
         ContractData.Element element = contractData.elementByPath();

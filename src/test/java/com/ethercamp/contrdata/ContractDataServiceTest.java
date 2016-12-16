@@ -1,6 +1,5 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.blockchain.SolidityContract;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Path;
@@ -9,6 +8,7 @@ import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.ethereum.util.blockchain.SolidityContract;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,8 +1,8 @@
 package com.ethercamp.contrdata.config;
 
 import org.ethereum.config.SystemProperties;
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.datasource.DbSource;
+import org.ethereum.datasource.leveldb.LevelDbDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -17,8 +17,8 @@ public class ContractDataConfig {
     }
 
     @Bean
-    public KeyValueDataSource storageDict() {
-        LevelDbDataSource dataSource = new LevelDbDataSource("storageDict");
+    public DbSource<byte[]> storageDict() {
+        DbSource<byte[]> dataSource = new LevelDbDataSource("storageDict");
         dataSource.init();
         return dataSource;
     }

@@ -1,23 +1,26 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.blockchain.LocalBlockchain;
-import com.ethercamp.contrdata.blockchain.StandaloneBlockchain;
 import com.ethercamp.contrdata.config.ContractDataConfig;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Storage;
+import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.FrontierConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.Repository;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.DbSource;
+import org.ethereum.datasource.inmem.HashMapDB;
+import org.ethereum.db.ContractDetails;
 import org.ethereum.solidity.compiler.SolidityCompiler;
+import org.ethereum.util.blockchain.LocalBlockchain;
+import org.ethereum.util.blockchain.StandaloneBlockchain;
 import org.ethereum.vm.DataWord;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
+import org.spongycastle.asn1.dvcs.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,12 +33,13 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.*;
+import com.ethercamp.contrdata.storage.dictionary.StorageDictionary.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
@@ -47,45 +51,32 @@ public abstract class BaseTest {
     static class Config {
 
         @Bean
-        public LocalBlockchain localBlockchain() {
+        public StandaloneBlockchain localBlockchain() {
             return new StandaloneBlockchain();
         }
 
         @Bean
         public Storage storage() {
-            Repository repository = localBlockchain().getBlockchainRepository();
-            return new Storage() {
-                @Override
-                public int size(byte[] address) {
-                    return repository.getContractDetails(address).getStorageSize();
-                }
-
-                @Override
-                public Map<DataWord, DataWord> entries(byte[] address, List<DataWord> keys) {
-                    return repository.getContractDetails(address).getStorage(keys);
-                }
-
-                @Override
-                public Set<DataWord> keys(byte[] address) {
-                    return repository.getContractDetails(address).getStorageKeys();
-                }
-
-                @Override
-                public DataWord get(byte[] address, DataWord key) {
-                    return repository.getContractDetails(address).get(key);
-                }
-            };
+            Repository repository = localBlockchain().getBlockchain().getRepository();
+            return new HashMapStorage(repository, storageDictionaryDb());
         }
 
         @Bean
-        public KeyValueDataSource storageDict() {
+        public DbSource<byte[]> storageDict() {
             return new HashMapDB();
+        }
+
+        @Bean
+        public StorageDictionaryDb storageDictionaryDb() {
+            StorageDictionaryDb db = new StorageDictionaryDb();
+            db.setDataSource(storageDict());
+            return db;
         }
     }
 
 
     @Autowired
-    protected LocalBlockchain blockchain;
+    protected StandaloneBlockchain blockchain;
     @Autowired
     protected StorageDictionaryDb dictDb;
 
@@ -97,6 +88,7 @@ public abstract class BaseTest {
                 return BigInteger.ONE;
             }
         }));
+        SystemProperties.getDefault().overrideParams("database.prune.enabled", "false");
     }
 
     @AfterClass
@@ -143,5 +135,65 @@ public abstract class BaseTest {
         assertEquals(name, field.getKey());
         assertEquals(type, field.getType().getName());
         assertEquals(value, field.getValue(valueExtractor));
+    }
+
+    public static class HashMapStorage implements Storage {
+
+        private final Repository repository;
+        private final StorageDictionaryDb storageDictionaryDb;
+
+        public HashMapStorage(Repository repository, StorageDictionaryDb storageDictionaryDb) {
+            this.repository = repository;
+            this.storageDictionaryDb = storageDictionaryDb;
+        }
+
+        @Override
+        public int size(byte[] address) {
+            return keys(address).size();
+//            return repository.getContractDetails(address).getStorageSize();
+        }
+
+        @Override
+        public Map<DataWord, DataWord> entries(byte[] address, List<DataWord> keys) {
+            keys.stream()
+                    .collect(toMap(Function.identity(), Function.identity()));
+            ContractDetails contractDetails = repository.getContractDetails(address);
+            Map<DataWord, DataWord> result = new HashMap<>();
+            keys.forEach(k -> result.put(k, contractDetails.get(k)));
+            return result;
+//            .getStorage(keys);
+        }
+
+        @Override
+        public Set<DataWord> keys(byte[] address) {
+//            return repository.getContractDetails(address).getStorageKeys();
+            StorageDictionary storageDictionary = storageDictionaryDb.get(StorageDictionaryDb.Layout.Solidity, address);
+            if (storageDictionary == null) {
+                return Collections.emptySet();
+            }
+            StorageDictionary.PathElement rootElement = storageDictionary.getByPath();
+            return findKeysIn(address, rootElement, new HashSet<>());
+        }
+
+        // stack overflow may occur
+        private Set<DataWord> findKeysIn(byte[] address, StorageDictionary.PathElement rootElement, HashSet<DataWord> dataWords) {
+            rootElement.getChildren().forEach(element -> {
+                if (element.hasChildren()) {
+                    findKeysIn(address, element, dataWords);
+                } else {
+                    DataWord key = new DataWord(element.storageKey);
+                    if (repository.getStorageValue(address, key) != null) {
+                        dataWords.add(key);
+                    }
+                }
+            });
+            return dataWords;
+        }
+
+
+        @Override
+        public DataWord get(byte[] address, DataWord key) {
+            return repository.getContractDetails(address).get(key);
+        }
     }
 }

@@ -1,10 +1,11 @@
+// import "std.sol";
 // This si marker
 // for contract not
 // to be deployed to
 // any environment
-contract abstract {}
+contract Abstract {}
 
-contract owned is abstract {
+contract owned is Abstract {
         address owner;
 
         function owned() {
@@ -15,17 +16,17 @@ contract owned is abstract {
                 owner = newOwner;
         }
         modifier onlyowner() {
-                if (msg.sender == owner) _
+                if (msg.sender == owner) _;
         }
 }
 
-contract mortal is abstract, owned {
+contract mortal is Abstract, owned {
         function kill() onlyowner {
                 if (msg.sender == owner) suicide(owner);
         }
 }
 
-contract NameReg is abstract {
+contract NameReg is Abstract {
         function register(bytes32 name) {}
 
         function unregister() {}
@@ -37,7 +38,7 @@ contract NameReg is abstract {
         function kill() {}
 }
 
-contract nameRegAware is abstract {
+contract NameRegAware is Abstract {
         function nameRegAddress() returns(address) {
                 // return 0x0860a8008298322a142c09b528207acb5ab7effc;
 
@@ -49,14 +50,14 @@ contract nameRegAware is abstract {
         }
 }
 
-contract named is abstract, nameRegAware {
-        function named(bytes32 name) {
+contract Named is Abstract, NameRegAware {
+        function Named(bytes32 name) {
                 NameReg(nameRegAddress()).register(name);
         }
 }
 
 // contract with util functions
-contract util is abstract {
+contract Util is Abstract {
         // Converts 'string' to 'bytes32'
         function s2b(string s) internal returns(bytes32) {
                 bytes memory b = bytes(s);
@@ -72,12 +73,11 @@ contract util is abstract {
 }
 
 
-contract ProjectKudos is owned, named("ProjectKudos") {
+contract ProjectKudos is owned, Named("ProjectKudos") {
 
         enum Status {
                 InProgress,
-                Finished,
-                Test
+                Finished
         }
 
         struct ProjectInfo {
@@ -188,9 +188,5 @@ contract ProjectKudos is owned, named("ProjectKudos") {
                 } else {
                         return projectKudos;
                 }
-        }
-
-        function toTestStatus() {
-                status = Status.Test;
         }
 }

@@ -5,8 +5,8 @@ import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.DbSource;
+import org.ethereum.datasource.inmem.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -105,7 +105,7 @@ public class FailedUseCaseTest extends BaseTest {
         }
 
         @Bean
-        public KeyValueDataSource storageDict() {
+        public DbSource storageDict() {
             return new HashMapDB();
         }
     }

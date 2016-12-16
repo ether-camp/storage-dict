@@ -1,7 +1,6 @@
 package com.ethercamp.contrdata.storage.dictionary;
 
-import org.ethereum.datasource.CachingDataSource;
-import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.DbSource;
 import org.ethereum.datasource.XorDataSource;
 import org.ethereum.util.ByteUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,12 +32,14 @@ public class StorageDictionaryDb {
         }
     }
 
-    private CachingDataSource db;
+    private DbSource db;
 
     @Autowired
     @Qualifier("storageDict")
-    public void setDataSource(KeyValueDataSource dataSource) {
-        this.db = new CachingDataSource(dataSource);
+    public void setDataSource(DbSource<byte[]> dataSource) {
+        // TODO put cache
+//        this.db = new ReadWriteCache(dataSource, WriteCache.CacheType.SIMPLE);
+        this.db = dataSource;
     }
 
     public void flush() {
@@ -47,7 +48,7 @@ public class StorageDictionaryDb {
 
     public void close() {
         db.flush();
-        db.close();
+//        ((DbSource) db.getSource()).close();
     }
 
     public StorageDictionary get(Layout layout, byte[] contractAddress) {

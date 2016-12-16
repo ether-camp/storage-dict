@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.Source;
+import org.ethereum.datasource.inmem.HashMapDB;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.RLP;
@@ -615,14 +615,14 @@ public class StorageDictionary {
     }
 
     @Getter
-    private KeyValueDataSource storageDb;
+    private Source<byte[], byte[]> storageDb;
     private PathElement root;
     private boolean exist;
 
     private Map<ByteArrayWrapper, PathElement> cache = new HashMap<>();
     private List<PathElement> dirtyNodes = new ArrayList<>();
 
-    public StorageDictionary(KeyValueDataSource storageDb) {
+    public StorageDictionary(Source<byte[], byte[]> storageDb) {
         this.storageDb = storageDb;
         this.root = load(PathElement.rootHash);
         this.exist = (root != null);
@@ -675,7 +675,7 @@ public class StorageDictionary {
     }
 
     public static StorageDictionary readDmp(Map<String, String> dump) {
-        HashMapDB storageDb = new HashMapDB();
+        HashMapDB<byte[]> storageDb = new HashMapDB<byte[]>();
         dump.entrySet().stream().forEach(entry -> storageDb.put(Hex.decode(entry.getKey()), Hex.decode(entry.getValue())));
         return new StorageDictionary(storageDb);
     }
@@ -683,6 +683,9 @@ public class StorageDictionary {
     public PathElement getByPath(String... path) {
         PathElement result = root;
         for (String pathPart : path) {
+            if (result == null) {
+                  return null;
+            }
             result = result.findChildByKey(pathPart);
         }
 

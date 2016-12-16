@@ -1,6 +1,5 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.blockchain.SolidityContract;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Path;
@@ -9,6 +8,8 @@ import com.ethercamp.contrdata.storage.StoragePage;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.ethereum.db.ContractDetails;
+import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.spongycastle.util.encoders.Hex.toHexString;
@@ -45,9 +47,10 @@ public class StructArrayTest extends BaseTest {
 
         assertEquals(2, targetElement.getChildrenCount());
 
+        ContractDetails contractDetails = blockchain.getBlockchain().getRepository().getContractDetails(contract.getAddress());
 
         targetElement.getChildren(0, 20).forEach(child -> {
-            System.out.println(child.getStorageValue(dataWord -> contract.getStorage().get(dataWord)));
+            System.out.println(child.getStorageValue(dataWord -> contractDetails.get(dataWord)));
         });
     }
 

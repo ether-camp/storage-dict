@@ -13,8 +13,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.datasource.leveldb.LevelDbDataSource;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -88,7 +87,7 @@ public class StorageDictTest extends BaseTest{
         }
 
         @Bean
-        public KeyValueDataSource storageDict() {
+        public LevelDbDataSource storageDict() {
             LevelDbDataSource dataSource = new LevelDbDataSource("storageDict");
             dataSource.init();
             return dataSource;

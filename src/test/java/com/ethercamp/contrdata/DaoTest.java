@@ -12,8 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.http.client.fluent.Request;
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.datasource.leveldb.LevelDbDataSource;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -142,7 +141,7 @@ public class DaoTest extends BaseTest {
         }
 
         @Bean
-        public KeyValueDataSource storageDict() {
+        public LevelDbDataSource storageDict() {
             LevelDbDataSource dataSource = new LevelDbDataSource("storageDict");
             dataSource.init();
             return dataSource;

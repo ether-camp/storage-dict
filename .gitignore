@@ -6,6 +6,7 @@
 .idea
 .gradle
 
+access.info
 logs
 build
 database

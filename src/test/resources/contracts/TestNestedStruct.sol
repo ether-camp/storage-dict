@@ -1,5 +1,7 @@
 contract TestNestedStruct {
-    
+
+    int simple1;
+
     struct Person {
         address addr;
         string name;
@@ -16,7 +18,9 @@ contract TestNestedStruct {
     uint sep2 = 256;
     Marriage[3] staticArray;
     uint sep3 = 256;
-    
+
+    int simple2;
+
     function TestNestedStruct() {
         single.wife.addr = 0xabababababababababababababababababababab;
         single.wife.name = 'Ann';
@@ -27,5 +31,8 @@ contract TestNestedStruct {
         staticArray[1].wife.name = 'Ann-1';
         staticArray[1].husband.addr = 0xffffcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcf;
         staticArray[1].husband.name = 'Eugene-1';
+
+        simple1 = 2;
+        simple2 = 3;
     }
 }

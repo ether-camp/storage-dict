@@ -63,7 +63,7 @@ public abstract class BaseTest {
 
         @Bean
         public DbSource<byte[]> storageDict() {
-            return new HashMapDB();
+            return new HashMapDBExt();
         }
 
         @Bean
@@ -71,6 +71,12 @@ public abstract class BaseTest {
             StorageDictionaryDb db = new StorageDictionaryDb();
             db.setDataSource(storageDict());
             return db;
+        }
+    }
+
+    public static class HashMapDBExt extends HashMapDB {
+        public Map source() {
+            return storage;
         }
     }
 

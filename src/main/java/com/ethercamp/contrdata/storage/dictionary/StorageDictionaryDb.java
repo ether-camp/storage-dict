@@ -47,6 +47,7 @@ public class StorageDictionaryDb {
     }
 
     public void close() {
+        // TODO put close
         db.flush();
 //        ((DbSource) db.getSource()).close();
     }

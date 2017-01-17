@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.ethereum.datasource.DbSource;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.VM;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,6 +59,7 @@ public class ContractDataServiceTest extends BaseTest {
 
 
     @Test
+    @Ignore("may affect other tests")
     public void index_shouldFillMissing() throws IOException {
         final Ast.Contract astContract = getContractAllDataMembers(nestingTestSol, "TestNestedStruct");
 
@@ -94,7 +96,14 @@ public class ContractDataServiceTest extends BaseTest {
                 assertThat(key.getDecoded(), is("simple2"));
                 assertThat(value.getDecoded(), is("3"));
             }
-
+            {
+                final List<StorageEntry> subEntries = contractDataService.getContractData(contract.getAddress(), contractData, false, Path.of("5", "1", "0"), 0, 20).getEntries();
+                final StorageEntry entry = subEntries.get(1);
+                final StorageEntry.Value value = (StorageEntry.Value) entry.getValue();
+                final StorageEntry.Key key = (StorageEntry.Key) entry.getKey();
+                assertThat(key.getDecoded(), is("name"));
+                assertThat(value.getDecoded(), is("Ann-1"));
+            }
         }
     }
 

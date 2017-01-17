@@ -34,9 +34,9 @@ import static org.ethereum.util.ByteUtil.toHexString;
 public class ContractDataService {
 
     @Autowired
-    private StorageDictionaryDb dictionaryDb;
+    StorageDictionaryDb dictionaryDb;
     @Autowired
-    private Storage storage;
+    Storage storage;
 
     public StoragePage getStorageEntries(byte[] address, int page, int size) {
         List<StorageEntry> entries = emptyList();

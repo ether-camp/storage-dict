@@ -103,10 +103,21 @@ public class ContractDataService {
     }
 
     public void importDictionary(byte[] address, Map<String, String> toImport) {
+        clearDictionary(address);
         StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
         try {
             Source<byte[], byte[]> dataSource = dictionary.getStorageDb();
             toImport.forEach((key, value) -> dataSource.put(Hex.decode(key), Hex.decode(value)));
+        } finally {
+            dictionaryDb.flush();
+        }
+    }
+
+    public void clearDictionary(byte[] address) {
+        StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        try {
+            KeyValueDataSource dataSource = dictionary.getStorageDb();
+            dataSource.keys().forEach(dataSource::delete);
         } finally {
             dictionaryDb.flush();
         }

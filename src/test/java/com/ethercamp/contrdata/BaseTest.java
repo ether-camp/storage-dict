@@ -1,7 +1,5 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.blockchain.LocalBlockchain;
-import com.ethercamp.contrdata.blockchain.StandaloneBlockchain;
 import com.ethercamp.contrdata.config.ContractDataConfig;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
@@ -10,10 +8,14 @@ import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.FrontierConfig;
 import org.ethereum.config.net.MainNetConfig;
+import org.ethereum.core.BlockchainImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.solidity.compiler.SolidityCompiler;
+import org.ethereum.util.blockchain.LocalBlockchain;
+import org.ethereum.util.blockchain.SolidityContract;
+import org.ethereum.util.blockchain.StandaloneBlockchain;
 import org.ethereum.vm.DataWord;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -53,7 +55,7 @@ public abstract class BaseTest {
 
         @Bean
         public Storage storage() {
-            Repository repository = localBlockchain().getBlockchainRepository();
+            Repository repository = ((BlockchainImpl) localBlockchain().getBlockchain()).getRepository();
             return new Storage() {
                 @Override
                 public int size(byte[] address) {
@@ -124,6 +126,10 @@ public abstract class BaseTest {
 
     protected static Ast.Contract getContractAllDataMembers(Resource sol, String contractName) throws IOException {
         return getContractAllDataMembers(resourceToBytes(sol), contractName);
+    }
+
+    protected static Function<DataWord, DataWord> newValueExtractor(SolidityContract contract) {
+        return key -> new DataWord(contract.getStorage().getStorageSlot(key.getData()));
     }
 
     protected static void assertStructEqual(ContractData.Element structEl, Function<DataWord, DataWord> valueExtractor, String... values) {

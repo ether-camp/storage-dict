@@ -10,6 +10,7 @@ import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,12 +80,31 @@ public class ContractDataService {
             return new StoragePage(entries, page, size, pathElement.getChildrenCount());
         } catch (Exception e) {
             log.error(DetailedMsg.withTitle("Cannot build contract structured storage:")
-                    .add("address",address)
-                    .add("path",path)
+                    .add("address", address)
+                    .add("path", path)
                     .add("storageDictionary", dictionary.dmp())
                     .add("storage", storageEntries(address))
                     .toJson());
             throw e;
+        }
+    }
+
+    public Map<String, String> exportDictionary(byte[] address, Path path) {
+        Map<String, String> result = new HashMap<>();
+
+        StorageDictionary.PathElement pathElement = getDictionary(address).getByPath(path.parts());
+        StorageDictionary.dmp(pathElement, result);
+
+        return result;
+    }
+
+    public void importDictionary(byte[] address, Map<String, String> toImport) {
+        StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        try {
+            KeyValueDataSource dataSource = dictionary.getStorageDb();
+            toImport.forEach((key, value) -> dataSource.put(Hex.decode(key), Hex.decode(value)));
+        } finally {
+            dictionaryDb.flush();
         }
     }
 

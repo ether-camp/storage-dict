@@ -1,11 +1,11 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.blockchain.SolidityContract;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.contract.Member;
 import com.ethercamp.contrdata.contract.Members;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
+import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -38,7 +38,7 @@ public class StorageIndexingTest extends BaseTest {
         assertNotNull(members);
         assertEquals(3, members.size());
 
-        Function<DataWord, DataWord> valueExtractor = key -> contract.getStorage().get(key);
+        Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
 
         Member mStruct = members.findByName("mStruct");
         assertEquals(0, mStruct.getStorageIndex());
@@ -95,7 +95,7 @@ public class StorageIndexingTest extends BaseTest {
 
         Ast.Contract astContract = getContractAllDataMembers(nestingTestSol, "TestNestedStruct");
         ContractData contractData = new ContractData(astContract, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
-        Function<DataWord, DataWord> valueExtractor = key -> contract.getStorage().get(key);
+        Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
 
         ContractData.Element element = contractData.elementByPath();
         List<ContractData.Element> members = element.getAllChildren();

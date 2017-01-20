@@ -3,7 +3,6 @@ package com.ethercamp.contrdata;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
@@ -35,8 +34,7 @@ public class StructTest extends BaseTest {
 
         Ast.Contract astContract = getContractAllDataMembers(contractSource, "TestStruct");
 
-        ContractDetails contractDetails = blockchain.getBlockchain().getRepository().getContractDetails(contract.getAddress());
-        Function<DataWord, DataWord> valueExtractor = key -> contractDetails.get(key);
+        Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
         ContractData contractData = new ContractData(astContract, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
 
         ContractData.Element element = contractData.elementByPath();
@@ -57,6 +55,4 @@ public class StructTest extends BaseTest {
         assertStructEqual(husband, valueExtractor, "Brad", "Pitt", "53", "1234567890123456789012345678901234567890");
         assertEquals(husband, contractData.elementByPath(husband.path().parts()));
     }
-
-
 }

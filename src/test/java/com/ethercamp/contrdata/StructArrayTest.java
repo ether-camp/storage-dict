@@ -8,7 +8,6 @@ import com.ethercamp.contrdata.storage.StoragePage;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
@@ -47,11 +46,8 @@ public class StructArrayTest extends BaseTest {
 
         assertEquals(2, targetElement.getChildrenCount());
 
-        ContractDetails contractDetails = blockchain.getBlockchain().getRepository().getContractDetails(contract.getAddress());
-
-        targetElement.getChildren(0, 20).forEach(child -> {
-            System.out.println(child.getStorageValue(dataWord -> contractDetails.get(dataWord)));
-        });
+        Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
+        targetElement.getChildren(0, 20).forEach(child -> System.out.println(child.getStorageValue(valueExtractor)));
     }
 
     @Autowired

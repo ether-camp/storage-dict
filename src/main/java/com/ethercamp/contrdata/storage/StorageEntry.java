@@ -4,6 +4,7 @@ import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.collections4.keyvalue.AbstractKeyValue;
 import org.apache.commons.lang3.StringUtils;
@@ -15,10 +16,12 @@ import java.util.function.Function;
 
 import static org.ethereum.util.ByteUtil.toHexString;
 
+@EqualsAndHashCode
 public class StorageEntry extends AbstractKeyValue implements Comparable<StorageEntry> {
 
     @Getter
     @Builder
+    @EqualsAndHashCode
     public static class Key implements Comparable<Key> {
         private String encoded;
         private String decoded;
@@ -33,6 +36,7 @@ public class StorageEntry extends AbstractKeyValue implements Comparable<Storage
 
     @Getter
     @Builder
+    @EqualsAndHashCode
     public static class Value {
         private String encoded;
         private String decoded;

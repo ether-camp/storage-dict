@@ -14,6 +14,7 @@ import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.http.client.fluent.Request;
 import org.ethereum.datasource.leveldb.LevelDbDataSource;
 import org.ethereum.vm.DataWord;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +42,7 @@ import static java.util.stream.Collectors.toMap;
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
         ContractDataConfig.class, BaseTest.Config.class, DaoTest.Config.class
 })
+@Ignore("Original storage may be loaded")
 public class DaoTest extends BaseTest {
 
     @Data

@@ -6,7 +6,6 @@ import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.StorageEntry;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
-import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryVmHook;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.ethereum.datasource.DbSource;
@@ -20,8 +19,10 @@ import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
@@ -29,12 +30,13 @@ public class ContractDataServiceTest extends BaseTest {
 
     @Autowired
     private ContractDataService contractDataService;
+    @Autowired
+    private DbSource<byte[]> storageDict;
 
     @Value("classpath:contracts/TestNestedStruct.sol")
     private Resource nestingTestSol;
-
-    @Autowired
-    private DbSource<byte[]> storageDict;
+    @Value("classpath:contracts/TestNestedStruct.sol")
+    private Resource emptyContractSol;
 
     @Test
     public void test() throws IOException {
@@ -57,6 +59,37 @@ public class ContractDataServiceTest extends BaseTest {
         System.out.println(mapper.writeValueAsString(entries));
     }
 
+    @Test
+    public void importTest() throws IOException {
+
+        Resource sourceSol = this.nestingTestSol;
+        Resource targetSol = this.emptyContractSol;
+
+        SolidityContract source = blockchain.submitNewContract(resourceToString(sourceSol));
+        SolidityContract target = blockchain.submitNewContract(resourceToString(targetSol));
+        blockchain.createBlock();
+
+        Map<String, String> dump = contractDataService.exportDictionary(source.getAddress(), Path.empty());
+        contractDataService.importDictionary(target.getAddress(), dump);
+
+        ContractData sourceContractData = getContractData(source.getAddress(), sourceSol, "TestNestedStruct");
+        List<StorageEntry> sourceEntries = contractDataService.getContractData(target.getAddress(), sourceContractData, false, Path.empty(), 0, Integer.MAX_VALUE).getEntries();
+
+        ContractData targetContractData = getContractData(target.getAddress(), sourceSol, "TestNestedStruct");
+        List<StorageEntry> targetEntries = contractDataService.getContractData(target.getAddress(), targetContractData, false, Path.empty(), 0, Integer.MAX_VALUE).getEntries();
+
+        assertEquals(sourceEntries.size(), targetEntries.size());
+        for (int i = 0; i < sourceEntries.size(); i++) {
+            assertEquals(sourceEntries.get(i), targetEntries.get(i));
+        }
+    }
+
+    private ContractData getContractData(byte[] address, Resource source, String contractName) throws IOException {
+        Ast.Contract contract = getContractAllDataMembers(source, contractName);
+        StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+
+        return new ContractData(contract, dictionary);
+    }
 
     @Test
     @Ignore("may affect other tests")

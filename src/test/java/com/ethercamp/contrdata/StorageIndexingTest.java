@@ -5,7 +5,6 @@ import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.contract.Member;
 import com.ethercamp.contrdata.contract.Members;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
@@ -32,15 +31,14 @@ public class StorageIndexingTest extends BaseTest {
         SolidityContract contract = blockchain.submitNewContract(resourceToString(packingTest1Sol));
         blockchain.createBlock();
 
-        final Ast.Contract astContract = getContractAllDataMembers(packingTest1Sol, "PackingTest");
-        final ContractData contractData = new ContractData(astContract, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
+        Ast.Contract astContract = getContractAllDataMembers(packingTest1Sol, "PackingTest");
+        ContractData contractData = new ContractData(astContract, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
 
         Members members = contractData.getMembers();
         assertNotNull(members);
         assertEquals(3, members.size());
 
-        ContractDetails contractDetails = blockchain.getBlockchain().getRepository().getContractDetails(contract.getAddress());
-        Function<DataWord, DataWord> valueExtractor = key -> contractDetails.get(key);
+        Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
 
         Member mStruct = members.findByName("mStruct");
         assertEquals(0, mStruct.getStorageIndex());
@@ -63,8 +61,6 @@ public class StorageIndexingTest extends BaseTest {
         ContractData.Element mAddressElement = contractData.elementByPath(mAddress.getPosition());
         DataWord storageValue1 = mAddressElement.getStorageValue(valueExtractor);
         assertEquals(new DataWord("000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), storageValue1);
-
-
     }
 
     @Test
@@ -98,11 +94,9 @@ public class StorageIndexingTest extends BaseTest {
         blockchain.createBlock();
 
         Ast.Contract astContract = getContractAllDataMembers(nestingTestSol, "TestNestedStruct");
+        Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
+
         ContractData contractData = new ContractData(astContract, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
-
-        ContractDetails contractDetails = blockchain.getBlockchain().getRepository().getContractDetails(contract.getAddress());
-        Function<DataWord, DataWord> valueExtractor = key -> contractDetails.get(key);
-
         ContractData.Element element = contractData.elementByPath();
         List<ContractData.Element> members = element.getAllChildren();
         assertEquals(6, members.size());

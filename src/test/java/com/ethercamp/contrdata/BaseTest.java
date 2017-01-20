@@ -14,13 +14,12 @@ import org.ethereum.datasource.DbSource;
 import org.ethereum.datasource.inmem.HashMapDB;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.solidity.compiler.SolidityCompiler;
-import org.ethereum.util.blockchain.LocalBlockchain;
+import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.util.blockchain.StandaloneBlockchain;
 import org.ethereum.vm.DataWord;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
-import org.spongycastle.asn1.dvcs.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,10 +35,11 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 
-import static java.util.Arrays.stream;
+import static java.util.Collections.emptySet;
+import static java.util.Objects.isNull;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.*;
-import com.ethercamp.contrdata.storage.dictionary.StorageDictionary.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
@@ -124,6 +124,10 @@ public abstract class BaseTest {
         return getContractAllDataMembers(resourceToBytes(sol), contractName);
     }
 
+    protected static Function<DataWord, DataWord> newValueExtractor(SolidityContract contract) {
+        return key -> new DataWord(contract.getStorage().getStorageSlot(key.getData()));
+    }
+
     protected static void assertStructEqual(ContractData.Element structEl, Function<DataWord, DataWord> valueExtractor, String... values) {
         assertTrue(structEl.getType().isStruct());
         assertEquals(values.length, structEl.getChildrenCount());
@@ -156,29 +160,20 @@ public abstract class BaseTest {
         @Override
         public int size(byte[] address) {
             return keys(address).size();
-//            return repository.getContractDetails(address).getStorageSize();
         }
 
         @Override
         public Map<DataWord, DataWord> entries(byte[] address, List<DataWord> keys) {
-            keys.stream()
-                    .collect(toMap(Function.identity(), Function.identity()));
             ContractDetails contractDetails = repository.getContractDetails(address);
-            Map<DataWord, DataWord> result = new HashMap<>();
-            keys.forEach(k -> result.put(k, contractDetails.get(k)));
-            return result;
-//            .getStorage(keys);
+            return keys.stream().collect(toMap(identity(), k -> contractDetails.get(k)));
         }
 
         @Override
         public Set<DataWord> keys(byte[] address) {
-//            return repository.getContractDetails(address).getStorageKeys();
             StorageDictionary storageDictionary = storageDictionaryDb.get(StorageDictionaryDb.Layout.Solidity, address);
-            if (storageDictionary == null) {
-                return Collections.emptySet();
-            }
-            StorageDictionary.PathElement rootElement = storageDictionary.getByPath();
-            return findKeysIn(address, rootElement, new HashSet<>());
+            return isNull(storageDictionary)
+                    ? emptySet()
+                    : findKeysIn(address, storageDictionary.getByPath(), new HashSet<>());
         }
 
         // stack overflow may occur

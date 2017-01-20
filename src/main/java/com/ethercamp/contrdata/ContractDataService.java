@@ -116,8 +116,8 @@ public class ContractDataService {
     public void clearDictionary(byte[] address) {
         StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
         try {
-            KeyValueDataSource dataSource = dictionary.getStorageDb();
-            dataSource.keys().forEach(dataSource::delete);
+            Source<byte[], byte[]> source = dictionary.getStorageDb();
+            dictionary.allKeys().forEach(key -> source.delete(key.getData()));
         } finally {
             dictionaryDb.flush();
         }

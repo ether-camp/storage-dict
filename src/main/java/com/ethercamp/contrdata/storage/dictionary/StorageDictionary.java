@@ -691,4 +691,20 @@ public class StorageDictionary {
 
         return result;
     }
+
+    public Set<DataWord> allKeys() {
+        return findKeysIn(root, new HashSet<>());
+    }
+
+    // stack overflow may occur
+    private Set<DataWord> findKeysIn(StorageDictionary.PathElement parent, Set<DataWord> keys) {
+        parent.getChildren().forEach(child -> {
+            if (child.hasChildren()) {
+                findKeysIn(child, keys);
+            } else {
+                keys.add(new DataWord(child.storageKey));
+            }
+        });
+        return keys;
+    }
 }

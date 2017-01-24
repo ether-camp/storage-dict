@@ -47,17 +47,17 @@ public class DaoTest extends BaseTest {
     @Data
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class Page<T> {
+    public static class Page<T> {
         private List<T> content;
         private boolean last;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class StorageEntry extends DefaultKeyValue<DataWord, DataWord> {
+    public static class StorageEntry extends DefaultKeyValue<DataWord, DataWord> {
 
     }
 
-    private static class StoragePage extends Page<StorageEntry> {
+    public static class StoragePage extends Page<StorageEntry> {
 
         public Map<DataWord, DataWord> toMap() {
             return getContent().stream().collect(Collectors.toMap(StorageEntry::getKey, StorageEntry::getValue));

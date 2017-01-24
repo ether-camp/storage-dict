@@ -5,15 +5,16 @@ import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.FrontierConfig;
 import org.ethereum.config.net.MainNetConfig;
-import org.ethereum.core.BlockchainImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.solidity.compiler.SolidityCompiler;
-import org.ethereum.util.blockchain.LocalBlockchain;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.util.blockchain.StandaloneBlockchain;
 import org.ethereum.vm.DataWord;
@@ -45,17 +46,20 @@ import static org.junit.Assert.*;
 })
 public abstract class BaseTest {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+
     @Configuration
     static class Config {
 
         @Bean
-        public LocalBlockchain localBlockchain() {
-            return new StandaloneBlockchain();
+        public StandaloneBlockchain localBlockchain() {
+            return new StandaloneBlockchain()
+                    .withAutoblock(true);
         }
 
         @Bean
         public Storage storage() {
-            Repository repository = ((BlockchainImpl) localBlockchain().getBlockchain()).getRepository();
+            Repository repository = localBlockchain().getBlockchain().getRepository();
             return new Storage() {
                 @Override
                 public int size(byte[] address) {
@@ -87,7 +91,7 @@ public abstract class BaseTest {
 
 
     @Autowired
-    protected LocalBlockchain blockchain;
+    protected StandaloneBlockchain blockchain;
     @Autowired
     protected StorageDictionaryDb dictDb;
 
@@ -99,6 +103,7 @@ public abstract class BaseTest {
                 return BigInteger.ONE;
             }
         }));
+        SystemProperties.getDefault().overrideParams("database.prune.enabled", "false");
     }
 
     @AfterClass
@@ -150,4 +155,9 @@ public abstract class BaseTest {
         assertEquals(type, field.getType().getName());
         assertEquals(value, field.getValue(valueExtractor));
     }
+
+    protected static String toJson(Object object) throws JsonProcessingException {
+        return OBJECT_MAPPER.writeValueAsString(object);
+    }
+
 }

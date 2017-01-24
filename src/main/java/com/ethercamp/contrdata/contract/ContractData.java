@@ -257,6 +257,10 @@ public class ContractData {
                 return path.extend(startIndex);
             }
 
+            if (parentType.isStruct() && grandParent.getType().isMapping()) {
+                return path.extend(member.getStorageIndex());
+            }
+
             return path.extend(id);
         }
 

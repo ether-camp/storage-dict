@@ -1,4 +1,6 @@
-contract TestNestedStruct {
+contract TestDictRecovery {
+
+    int simple1;
 
     struct Person {
         address addr;
@@ -17,7 +19,9 @@ contract TestNestedStruct {
     Marriage[3] staticArray;
     uint sep3 = 256;
 
-    function TestNestedStruct() {
+    int simple2;
+
+    function TestDictRecovery() {
         single.wife.addr = 0xabababababababababababababababababababab;
         single.wife.name = 'Ann';
         single.husband.addr = 0xcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcf;
@@ -27,5 +31,8 @@ contract TestNestedStruct {
         staticArray[1].wife.name = 'Ann-1';
         staticArray[1].husband.addr = 0xffffcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcf;
         staticArray[1].husband.name = 'Eugene-1';
+
+        simple1 = 2;
+        simple2 = 3;
     }
 }

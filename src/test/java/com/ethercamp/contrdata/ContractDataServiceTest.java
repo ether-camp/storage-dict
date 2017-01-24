@@ -26,9 +26,11 @@ public class ContractDataServiceTest extends BaseTest {
     @Autowired
     private ContractDataService contractDataService;
 
+    @Value("classpath:contracts/TestDictRecovery.sol")
+    private Resource dictRecoveryTestSol;
     @Value("classpath:contracts/TestNestedStruct.sol")
     private Resource nestingTestSol;
-    @Value("classpath:contracts/TestNestedStruct.sol")
+    @Value("classpath:contracts/EmptyContract.sol")
     private Resource emptyContractSol;
 
     @Test

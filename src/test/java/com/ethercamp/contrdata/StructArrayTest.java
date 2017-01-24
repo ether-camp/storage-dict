@@ -5,6 +5,7 @@ import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.StoragePage;
+import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -25,21 +26,22 @@ import static org.spongycastle.util.encoders.Hex.toHexString;
 
 public class StructArrayTest extends BaseTest {
 
-    private String contractSource;
+    private String testStructArraySrc;
 
     @Value("${classpath:contracts/struct/TestStructArray.sol}")
-    public void setContractSource(Resource contractSource) throws IOException {
-        this.contractSource = resourceToString(contractSource);
+    public void setTestStructArray(Resource source) throws IOException {
+        this.testStructArraySrc = resourceToString(source);
     }
 
     @Test
-    public void test() throws IOException {
+    public void testStructArray() throws IOException {
 
-        SolidityContract contract = blockchain.submitNewContract(contractSource);
+        SolidityContract contract = blockchain.submitNewContract(testStructArraySrc);
         blockchain.createBlock();
 
-        Ast.Contract contractAst = getContractAllDataMembers(contractSource, "TestStructArray");
-        ContractData contractData = new ContractData(contractAst, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
+        Ast.Contract contractAst = getContractAllDataMembers(testStructArraySrc, "TestStructArray");
+        StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
+        ContractData contractData = new ContractData(contractAst, dictionary);
         contractData.elementByPath(0);
 
         ContractData.Element targetElement = contractData.elementByPath(0);

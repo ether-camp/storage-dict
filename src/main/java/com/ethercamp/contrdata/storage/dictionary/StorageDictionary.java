@@ -399,10 +399,15 @@ public class StorageDictionary {
         }
 
         public PathElement findChildByKey(String key) {
-            return getChildrenStream()
-                    .filter(child -> StringUtils.equals(child.key, key))
-                    .findFirst()
-                    .orElse(null);
+            Iterator<PathElement> children = getChildrenIterator();
+            while (children.hasNext()) {
+                PathElement child = children.next();
+                if (StringUtils.equals(child.key, key)) {
+                    return child;
+                }
+            }
+
+            return null;
         }
 
         public boolean hasChildren() {

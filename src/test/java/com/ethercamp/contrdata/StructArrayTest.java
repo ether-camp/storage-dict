@@ -5,10 +5,10 @@ import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.StoragePage;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
-import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.ethercamp.contrdata.utils.RandomUtils;
+import org.ethereum.util.blockchain.SolidityCallResult;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
@@ -17,11 +17,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
+import static com.ethercamp.contrdata.storage.Path.parseHumanReadable;
+import static com.ethercamp.contrdata.utils.RandomUtils.randomBytes;
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.spongycastle.util.encoders.Hex.toHexString;
 
 public class StructArrayTest extends BaseTest {
@@ -33,27 +39,46 @@ public class StructArrayTest extends BaseTest {
         this.testStructArraySrc = resourceToString(source);
     }
 
-    @Test
-    public void testStructArray() throws IOException {
-
-        SolidityContract contract = blockchain.submitNewContract(testStructArraySrc);
-        blockchain.createBlock();
-
-        Ast.Contract contractAst = getContractAllDataMembers(testStructArraySrc, "TestStructArray");
-        StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
-        ContractData contractData = new ContractData(contractAst, dictionary);
-        contractData.elementByPath(0);
-
-        ContractData.Element targetElement = contractData.elementByPath(0);
-
-        assertEquals(2, targetElement.getChildrenCount());
-
-        Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
-        targetElement.getChildren(0, 20).forEach(child -> System.out.println(child.getStorageValue(valueExtractor)));
+    enum Gender {
+        MALE, FEMALE
     }
 
-    @Autowired
-    private Storage storage;
+    @Test
+    public void testStructArray() throws IOException {
+        SolidityContract contract = blockchain.submitNewContract(testStructArraySrc);
+
+        SolidityCallResult callResult = contract.callFunction("addPerson", "Angelina Jolie", 29, Gender.FEMALE.ordinal());
+        BigInteger wifeId = (BigInteger) callResult.getReturnValue();
+
+        callResult = contract.callFunction("addPerson", "Brad Pitt", 28, Gender.MALE.ordinal());
+        BigInteger husbandId = (BigInteger) callResult.getReturnValue();
+
+        callResult = contract.callFunction("addMarriage", wifeId, husbandId);
+        BigInteger marriageId = (BigInteger) callResult.getReturnValue();
+
+
+        printStorageInfo(contract);
+        ContractData cd = getContractData(contract, testStructArraySrc, "TestStructArray");
+        Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
+
+        ContractData.Element personsEl = getElement(cd, "persons");
+        assertEquals(2, personsEl.getChildrenCount());
+
+        ContractData.Element wifeEl = getElement(cd, "persons[%s]", wifeId);
+        assertStructEqual(wifeEl, valueExtractor, "Angelina Jolie", 29, Gender.FEMALE);
+
+        ContractData.Element husbandEl = getElement(cd, "persons[%s]", husbandId);
+        assertStructEqual(husbandEl, valueExtractor, "Brad Pitt", 28, Gender.MALE);
+
+
+        ContractData.Element registerEl = getElement(cd, "register");
+        assertEquals(1, registerEl.getChildrenCount());
+
+        assertEquals(wifeId.toString(), getElement(cd, "register[%s].wife", marriageId).getValue(valueExtractor));
+        assertEquals(husbandId.toString(), getElement(cd, "register[%s].husband", marriageId).getValue(valueExtractor));
+        assertNotNull(getElement(cd, "register[%s].marriageDate", marriageId).getValue(valueExtractor));
+    }
+
     @Autowired
     private ContractDataService contractDataService;
 
@@ -66,21 +91,29 @@ public class StructArrayTest extends BaseTest {
 
     @Test
     public void testShiftedArray() throws IOException {
-
         SolidityContract contract = blockchain.submitNewContract(shiftedArraySrc);
-        blockchain.createBlock();
+        contract.callFunction("newProposal",
+                randomBytes(20),
+                123231,
+                "prop desc",
+                randomBytes(3),
+                1000000,
+                true
+        );
+        contract.callFunction("newProposal",
+                randomBytes(20),
+                123233,
+                "prop desc 1",
+                randomBytes(3),
+                1000001,
+                true
+        );
 
-        Ast.Contract contractAst = getContractAllDataMembers(shiftedArraySrc, "ShiftedArray");
-        StoragePage page = contractDataService.getContractData(toHexString(contract.getAddress()), contractAst.toJson(), Path.of(0), 0, 100);
+        printStorageInfo(contract);
 
-        System.out.println(new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(page));
-        Set<DataWord> keys = storage.keys(contract.getAddress());
-
-
-        System.out.println(storage.size(contract.getAddress()));
-        storage.entries(contract.getAddress(), new ArrayList<>(keys)).entrySet().stream()
-                .sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
-                .forEach(System.out::println);
+        ContractData contractData = getContractData(contract, shiftedArraySrc, "ShiftedArray");
+        ContractData.Element proposals = getElement(contractData, "proposals");
+        assertEquals(2, proposals.getChildrenCount());
     }
 
 
@@ -94,12 +127,16 @@ public class StructArrayTest extends BaseTest {
     @Test
     public void testRemovedFields() throws IOException {
         SolidityContract contract = blockchain.submitNewContract(removedFieldsSrc);
-        blockchain.createBlock();
 
-        Ast.Contract contractAst = getContractAllDataMembers(removedFieldsSrc, "RemovedFields");
-        StoragePage page = contractDataService.getContractData(toHexString(contract.getAddress()), contractAst.toJson(), Path.of(0), 0, 100);
+        ContractData cd = getContractData(contract, removedFieldsSrc, "RemovedFields");
+        Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
+        ContractData.Element addresses = getElement(cd, "addresses");
 
-        System.out.println(new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(page));
+        assertEquals(3, addresses.getChildrenCount());
+
+        System.out.println(getElement(cd, "addresses[0]").getValue(valueExtractor));
+        System.out.println(getElement(cd, "addresses[1]").getValue(valueExtractor));
+        System.out.println(getElement(cd, "addresses[2]").getValue(valueExtractor));
     }
 
 }

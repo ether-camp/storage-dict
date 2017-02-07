@@ -1,5 +1,6 @@
 package com.ethercamp.contrdata;
 
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -185,7 +186,7 @@ public class StorageDictionaryTest extends BaseTest {
 //            System.out.printf("======= " + e.getKey() + ":\n" + e.getValue().dump() + "\n");
 //        }
 //
-//        StorageDictionary d = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, Hex.decode("de0b295669a9fd93d5f28d9ec85e40f4cb697bae"));
+//        StorageDictionary d = dictDb.getDictionaryFor(StorageDictionaryDb.Layout.Solidity, Hex.decode("de0b295669a9fd93d5f28d9ec85e40f4cb697bae"));
 //        System.out.println(d.dump());
 //        System.out.println(d.serializeToJson());
 //
@@ -242,7 +243,7 @@ public class StorageDictionaryTest extends BaseTest {
         for (int k = 0; k < 50; k++) {
             byte[] contractAddr = ByteUtil.intToBytes(k);
 
-            StorageDictionary kp = db.getOrCreate(StorageDictionaryDb.Layout.Solidity, contractAddr);
+            StorageDictionary kp = db.getDictionaryFor(Layout.Lang.solidity, contractAddr);
             for (int j = 0; j < 2; j++) {
                 long s = System.currentTimeMillis();
                 for (int i = 0; i < 10000; i++) {
@@ -266,7 +267,7 @@ public class StorageDictionaryTest extends BaseTest {
             for (int k = 0; k < 5; k++) {
                 byte[] contractAddr = ByteUtil.intToBytes(k);
 
-                StorageDictionary kp = db.getOrCreate(StorageDictionaryDb.Layout.Solidity, contractAddr);
+                StorageDictionary kp = db.getDictionaryFor(Layout.Lang.solidity, contractAddr);
                 for (int i = 0; i < 10; i++) {
                     kp.addPath(createPath("0/" + (1000000 + i)));
 
@@ -309,7 +310,7 @@ public class StorageDictionaryTest extends BaseTest {
 ////    public void aa() {
 ////        StorageDictionaryDb dictDb = new StorageDictionaryDb();
 ////        dictDb.init(new File("D:\\ws\\work\\q8\\b\\storagedict"));
-////        StorageDictionary sd = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, Hex.decode("99b28a25e94d4fc009d4fcbc2f6b91440afb901d"));
+////        StorageDictionary sd = dictDb.getDictionaryFor(StorageDictionaryDb.Layout.Solidity, Hex.decode("99b28a25e94d4fc009d4fcbc2f6b91440afb901d"));
 ////        System.out.println(sd.dump());
 ////        StorageDictionary sdc = sd.compactAndFilter(null);
 ////        System.out.println(sdc.dump());

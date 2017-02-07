@@ -3,18 +3,24 @@ package com.ethercamp.contrdata;
 import com.ethercamp.contrdata.config.ContractDataConfig;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
+import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.Storage;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
+import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import lombok.SneakyThrows;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.FrontierConfig;
 import org.ethereum.config.net.MainNetConfig;
+import org.ethereum.core.BlockchainImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.db.ContractDetails;
 import org.ethereum.solidity.compiler.SolidityCompiler;
+import org.ethereum.util.blockchain.LocalBlockchain;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.util.blockchain.StandaloneBlockchain;
 import org.ethereum.vm.DataWord;
@@ -25,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
@@ -33,17 +40,18 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
+import static com.ethercamp.contrdata.storage.Path.parseHumanReadable;
+import static java.lang.String.format;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
         ContractDataConfig.class, BaseTest.Config.class
 })
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public abstract class BaseTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
@@ -52,14 +60,15 @@ public abstract class BaseTest {
     static class Config {
 
         @Bean
-        public StandaloneBlockchain localBlockchain() {
+        public LocalBlockchain blockchain() {
             return new StandaloneBlockchain()
-                    .withAutoblock(true);
+                    .withAutoblock(true)
+                    .withGasLimit(3_000_000_000L);
         }
 
         @Bean
-        public Storage storage() {
-            Repository repository = localBlockchain().getBlockchain().getRepository();
+        public Storage storage(LocalBlockchain blockchain) {
+            Repository repository = ((BlockchainImpl) blockchain.getBlockchain()).getRepository();
             return new Storage() {
                 @Override
                 public int size(byte[] address) {
@@ -91,9 +100,12 @@ public abstract class BaseTest {
 
 
     @Autowired
-    protected StandaloneBlockchain blockchain;
+    protected LocalBlockchain blockchain;
+    @Autowired
+    protected Storage storage;
     @Autowired
     protected StorageDictionaryDb dictDb;
+
 
     @BeforeClass
     public static void setup() {
@@ -133,11 +145,11 @@ public abstract class BaseTest {
         return getContractAllDataMembers(resourceToBytes(sol), contractName);
     }
 
-    protected static Function<DataWord, DataWord> newValueExtractor(SolidityContract contract) {
-        return key -> new DataWord(contract.getStorage().getStorageSlot(key.getData()));
+    protected Function<DataWord, DataWord> newValueExtractor(SolidityContract contract) {
+        return key -> storage.get(contract.getAddress(), key);
     }
 
-    protected static void assertStructEqual(ContractData.Element structEl, Function<DataWord, DataWord> valueExtractor, String... values) {
+    protected static void assertStructEqual(ContractData.Element structEl, Function<DataWord, DataWord> valueExtractor, Object... values) {
         assertTrue(structEl.getType().isStruct());
         assertEquals(values.length, structEl.getChildrenCount());
 
@@ -145,7 +157,7 @@ public abstract class BaseTest {
         assertEquals(structEl.getChildrenCount(), fields.size());
 
         for (int i = 0; i < values.length; i++) {
-            assertEquals(values[i], fields.get(i).getValue(valueExtractor));
+            assertEquals(Objects.toString(values[i]), fields.get(i).getValue(valueExtractor));
         }
     }
 
@@ -156,8 +168,32 @@ public abstract class BaseTest {
         assertEquals(value, field.getValue(valueExtractor));
     }
 
-    protected static String toJson(Object object) throws JsonProcessingException {
+    @SneakyThrows
+    protected static String toJson(Object object) {
         return OBJECT_MAPPER.writeValueAsString(object);
     }
 
+    protected void printStorageInfo(SolidityContract contract) {
+        ContractDetails details = ((BlockchainImpl) blockchain.getBlockchain()).getRepository().getContractDetails(contract.getAddress());
+
+        Set<DataWord> keys = storage.keys(contract.getAddress());
+        Map<DataWord, DataWord> entries = storage.entries(contract.getAddress(), new ArrayList<>(keys));
+        System.out.printf("Storage:\n%s\n", toJson(entries));
+
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress());
+        StorageDictionary.PathElement root = dictionary.getByPath();
+        System.out.printf("Storage dictionary:\n%s\n", root.toString(details, 2));
+    }
+
+    protected ContractData getContractData(SolidityContract contract, String source, String contractName) throws IOException {
+        Ast.Contract ast = getContractAllDataMembers(source, contractName);
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress());
+
+        return new ContractData(ast, dictionary);
+    }
+
+    protected static ContractData.Element getElement(ContractData contractData, String humanReadablePath, Object... pathArgs) {
+        Path path = parseHumanReadable(format(humanReadablePath, pathArgs), contractData);
+        return contractData.elementByPath(path.parts());
+    }
 }

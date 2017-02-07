@@ -5,6 +5,7 @@ import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.StorageEntry;
 import com.ethercamp.contrdata.storage.StoragePage;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -61,7 +62,7 @@ public class ContractDataService {
     }
 
     private StorageDictionary getDictionary(byte[] address) {
-        return dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        return dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
     }
 
     private StorageDictionary getDictionary(byte[] address, Set<DataWord> hashFilter) {
@@ -100,7 +101,7 @@ public class ContractDataService {
 
     public void importDictionary(byte[] address, Map<String, String> toImport) {
         clearDictionary(address);
-        StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
         try {
             KeyValueDataSource dataSource = dictionary.getStorageDb();
             toImport.forEach((key, value) -> dataSource.put(Hex.decode(key), Hex.decode(value)));
@@ -110,7 +111,7 @@ public class ContractDataService {
     }
 
     public void clearDictionary(byte[] address) {
-        StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
         try {
             KeyValueDataSource dataSource = dictionary.getStorageDb();
             dataSource.keys().forEach(dataSource::delete);

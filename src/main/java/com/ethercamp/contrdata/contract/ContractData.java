@@ -12,14 +12,14 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.apache.commons.lang3.math.NumberUtils.toInt;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -370,9 +370,9 @@ public class ContractData {
 
             DataWord result = null;
             StorageDictionary.PathElement pe = toDictionaryPathElement();
-            if (pe != null) {
+            if (nonNull(pe)) {
                 result = valueExtractor.apply(new DataWord(pe.storageKey));
-                if (member != null) {
+                if (nonNull(member)) {
                     result = member.extractValue(result);
                 }
             }
@@ -413,8 +413,8 @@ public class ContractData {
             Object result = rawValue;
 
             if (type.isEnum()) {
-                result = getEnumValueByOrdinal(type.asEnum(), (rawValue == null) ? 0 : rawValue.intValue());
-            } else if (type.isContract() && rawValue != null) {
+                result = getEnumValueByOrdinal(type.asEnum(), isNull(rawValue) ? 0 : rawValue.intValue());
+            } else if (type.isContract() && nonNull(rawValue)) {
                 result = toHexString(rawValue.getLast20Bytes());
             } else if (type.isElementary()) {
                 Ast.Type.Elementary elementary = type.asElementary();
@@ -429,11 +429,11 @@ public class ContractData {
                 } else if (elementary.is("bytes")) {
                     result = Hex.toHexString(bytesExtractor.get());
                 } else if (elementary.isBool()) {
-                    result = !(rawValue == null || rawValue.isZero());
-                } else if (elementary.isAddress() && rawValue != null) {
+                    result = !(isNull(rawValue) || rawValue.isZero());
+                } else if (elementary.isAddress() && nonNull(rawValue)) {
                     result = toHexString(rawValue.getLast20Bytes());
                 } else if (elementary.isNumber()) {
-                    result = (rawValue == null) ? 0 : rawValue.bigIntValue();
+                    result = isNull(rawValue) ? 0 : rawValue.bigIntValue();
                 }
             }
 

@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -729,7 +730,7 @@ public class Ast {
                     elementType = Type.detectAndCreate(this, line);
                 } else if (elementType.applicable(line)) {
                     elementType.apply(line);
-                } else {
+                } else if (isNull(size)) {
                     Matcher matcher = line.matcher(Patterns.LITERAL_DETECTOR);
                     if (matcher.matches()) {
                         String size = matcher.group(1);

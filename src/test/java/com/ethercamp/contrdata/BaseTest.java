@@ -68,28 +68,7 @@ public abstract class BaseTest {
 
         @Bean
         public Storage storage(LocalBlockchain blockchain) {
-            Repository repository = ((BlockchainImpl) blockchain.getBlockchain()).getRepository();
-            return new Storage() {
-                @Override
-                public int size(byte[] address) {
-                    return repository.getContractDetails(address).getStorageSize();
-                }
-
-                @Override
-                public Map<DataWord, DataWord> entries(byte[] address, List<DataWord> keys) {
-                    return repository.getContractDetails(address).getStorage(keys);
-                }
-
-                @Override
-                public Set<DataWord> keys(byte[] address) {
-                    return repository.getContractDetails(address).getStorageKeys();
-                }
-
-                @Override
-                public DataWord get(byte[] address, DataWord key) {
-                    return repository.getContractDetails(address).get(key);
-                }
-            };
+            return Storage.fromRepo(((BlockchainImpl) blockchain.getBlockchain()).getRepository());
         }
 
         @Bean

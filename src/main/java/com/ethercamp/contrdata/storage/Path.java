@@ -45,6 +45,13 @@ public class Path extends ArrayList<String> {
         return isEmpty() ? null : get(size() - 1);
     }
 
+    public String removeLast() {
+        if (isEmpty()) {
+            throw new IllegalStateException("Can not remove last item: path is empty.");
+        }
+        return remove(size() - 1);
+    }
+
     public Path tail() {
         return (size() > 1) ? new Path(subList(1, size())) : empty();
     }

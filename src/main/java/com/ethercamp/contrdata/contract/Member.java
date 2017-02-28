@@ -6,27 +6,29 @@ import org.ethereum.vm.DataWord;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ArrayUtils.subarray;
 import static org.apache.commons.lang3.math.NumberUtils.toInt;
 
 @Getter
 public class Member {
 
-    private static final int BYTES_IN_SLOT = 32;
+    public static final int BYTES_IN_SLOT = 32;
     private static final int BITS_IN_BYTE = 8;
+
+    private static final Pattern BYTES_TYPE_PATTERN = Pattern.compile("^bytes(\\d{0,2})$");
+    private static final Pattern INT_TYPE_PATTERN = Pattern.compile("^u?int(\\d{0,3})$");
+
+
     private static final int BITS_IN_SLOT = BITS_IN_BYTE * BYTES_IN_SLOT;
-
-
     private final Member prev;
     private final int position;
     private final Ast.Type type;
     private final String name;
-    private final boolean packed;
 
+    private final boolean packed;
     private final ContractData contractData;
     private final int slotFreeSpace;
-    public static final Pattern BYTES_TYPE_PATTERN = Pattern.compile("^bytes(\\d{0,2})$");
-    public static final Pattern INT_TYPE_PATTERN = Pattern.compile("^u?int(\\d{0,3})$");
 
     public Member(Member prev, Ast.Variable variable, ContractData contractData) {
         this.contractData = contractData;
@@ -47,21 +49,22 @@ public class Member {
     }
 
     public boolean hasPrev() {
-        return prev != null;
+        return nonNull(prev);
     }
 
     public int reservedSlotsCount() {
         if (type.isStruct()) {
             return contractData.getStructFields(type.asStruct()).reservedSlotsCount();
         } else if (type.isStaticArray()) {
-            int result = type.asArray().getSize();
+            int arrSize = type.asArray().getSize();
 
-            if (type.isStructArray()) {
+            Ast.Type nestedType = type.asArray().getElementType();
+            if (nestedType.isStruct()) {
                 Ast.Type.Struct struct = type.asArray().getElementType().asStruct();
-                result *= contractData.getStructFields(struct).reservedSlotsCount();
+                return arrSize * contractData.getStructFields(struct).reservedSlotsCount();
             }
 
-            return result;
+            return (int) Math.ceil((float) arrSize * size(nestedType) / BYTES_IN_SLOT);
         }
 
         return isPacked() ? 0 : 1;
@@ -87,7 +90,7 @@ public class Member {
     }
 
     public DataWord extractValue(DataWord slot) {
-        if (slot == null) return  null;
+        if (slot == null) return null;
 
         int size = size(getType());
         int from = getSlotFreeSpace();
@@ -95,7 +98,7 @@ public class Member {
         return new DataWord(subarray(slot.getData(), from, from + size));
     }
 
-    private static int size(Ast.Type type) {
+    static int size(Ast.Type type) {
         int result = BYTES_IN_SLOT;
 
         if (type.isEnum()) {

@@ -8,6 +8,7 @@ import com.ethercamp.contrdata.storage.StorageEntry;
 import com.ethercamp.contrdata.storage.StoragePage;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
+import org.ethereum.core.BlockchainImpl;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.junit.Test;
@@ -71,7 +72,7 @@ public class SimpleDSTContractTest extends BaseTest {
     private void printStorage(SolidityContract contract) {
         byte[] address = contract.getAddress();
         System.out.printf("'%s' contract storage:\n", ByteUtil.toHexString(address));
-        blockchain.getBlockchain().getRepository().getContractDetails(address).getStorage().entrySet().stream()
+        ((BlockchainImpl) blockchain.getBlockchain()).getRepository().getContractDetails(address).getStorage().entrySet().stream()
                 .sorted((o1, o2) -> o1.getKey().compareTo(o2.getKey()))
                 .forEach(e -> System.out.printf("'%s' : '%s'\n", e.getKey(), e.getValue()));
     }

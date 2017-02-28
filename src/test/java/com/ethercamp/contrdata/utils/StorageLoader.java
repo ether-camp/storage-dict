@@ -1,6 +1,7 @@
 package com.ethercamp.contrdata.utils;
 
 import com.ethercamp.contrdata.storage.Storage;
+import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,7 +10,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.http.client.fluent.Request;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.vm.DataWord;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,11 +83,11 @@ public final class StorageLoader {
                     .handleResponse(response -> OBJECT_MAPPER.readValue(response.getEntity().getContent(), StoragePage.class));
         }
         public static StoragePage loadAll(final String stateServiceUrl, String address) throws IOException {
-            return load(stateServiceUrl, address, 0, 1_000_000);
+            return load(stateServiceUrl, address, 0, Integer.MAX_VALUE);
         }
     }
 
-    public static Map<String, String> loadStorageDictionary(final String stateServiceUrl, String address) throws IOException {
+    public static Map<String, String> loadStorageDictionaryDump(final String stateServiceUrl, String address) throws IOException {
         String uri = format("%s/api/v1/accounts/%s/smart-storage/export", stateServiceUrl, address);
         System.out.println("Storage dictionary loading " + uri + " ...");
         return Request.Get(uri)
@@ -93,5 +97,12 @@ public final class StorageLoader {
                     return new ObjectMapper().readValue(content, new TypeReference<Map<String, String>>() {
                     });
                 });
+    }
+
+    public static StorageDictionary loadStorageDictionary(final String stateServiceUrl, String address) throws IOException {
+        Map<String, String> dump = loadStorageDictionaryDump(stateServiceUrl, address);
+        KeyValueDataSource ds = new HashMapDB();
+        dump.forEach((k, v) -> ds.put(Hex.decode(k), Hex.decode(v)));
+        return new StorageDictionary(ds);
     }
 }

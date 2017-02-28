@@ -1,6 +1,9 @@
 package com.ethercamp.contrdata;
 
+import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
+import com.ethercamp.contrdata.contract.Member;
+import com.ethercamp.contrdata.contract.Members;
 import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.StorageEntry;
@@ -24,6 +27,7 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.ethereum.util.ByteUtil.intToBytes;
 import static org.ethereum.util.ByteUtil.toHexString;
 
 @Slf4j(topic = "contract-data")
@@ -160,6 +164,49 @@ public class ContractDataService {
         ContractData contractData = ContractData.parse(contractDataJson, dictionary);
 
         return getContractData(contractAddress, contractData, false, path, page, size);
+    }
+
+    /**
+     * Fill dictionary with missing properties.
+     * Useful when if indexing started not from zero block
+     * (for example after fast sync).
+     *
+     * Changes aren't get persisted after this operation.
+     */
+    public void fillMissingKeys(ContractData contractData) {
+        final StorageDictionary.PathElement root = contractData.getDictionary().getByPath();
+
+        fillKeys(contractData, root, contractData.getMembers(), 0);
+    }
+
+    private static void fillKeys(ContractData contractData, StorageDictionary.PathElement root, List<Member> members, int addition) {
+        members.forEach(member -> {
+            if (member.getType().isElementary()) {
+                final StorageDictionary.PathElement pe = new StorageDictionary.PathElement();
+                pe.type = StorageDictionary.PathElement.Type.StorageIndex;
+                pe.key = String.valueOf(member.getStorageIndex() + addition);
+                pe.storageKey = new DataWord(intToBytes(member.getStorageIndex() + addition)).getData();
+
+                root.addChild(pe);
+
+            } else if (member.getType().isStruct()) {
+                final Ast.Type.Struct struct = member.getType().asStruct();
+
+                final Members structFields = contractData.getStructFields(struct);
+                fillKeys(contractData, root, structFields, member.getStorageIndex() + addition);
+            } else if (member.getType().isStaticArray()) {
+                final Ast.Type.Array array = member.getType().asArray();
+
+                for (int i = 0; i < array.getSize(); i++) {
+                    final Ast.Variable variable = new Ast.Variable();
+                    variable.setType(array.getElementType());
+                    Member subMember = new Member(null, variable, contractData);
+                    fillKeys(contractData, root, Arrays.asList(subMember), member.getStorageIndex() + i);
+                }
+            } else {
+                // ignore dynamic arrays and mappings
+            }
+        });
     }
 
     public StoragePage getContractDataDiff(String transactionHash, String address, String contractDataJson, Path path, int page, int size) {

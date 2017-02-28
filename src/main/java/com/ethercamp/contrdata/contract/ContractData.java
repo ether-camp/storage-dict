@@ -4,6 +4,7 @@ import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
@@ -12,14 +13,14 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.apache.commons.lang3.math.NumberUtils.toInt;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -40,7 +41,6 @@ public class ContractData {
         this.structFields = contract.getStructures().stream().collect(toMap(Ast.Structure::getName, struct -> Members.ofStructure(this, struct)));
         this.enumValues = contract.getEnums().stream()
                 .collect(toMap(Ast.Enum::getName, anEnum -> anEnum.getValues().stream().map(Ast.EnumValue::getName).collect(toList())));
-
     }
 
     public Members getStructFields(Ast.Type.Struct struct) {
@@ -77,7 +77,11 @@ public class ContractData {
     private Map<Element, StorageDictionary.PathElement> elementTranslateMap = new HashMap<>();
 
     private StorageDictionary.PathElement translateToPathElement(Element element) {
-        return elementTranslateMap.computeIfAbsent(element, el -> dictionary.getByPath(el.dictionaryPath().parts()));
+        return elementTranslateMap.computeIfAbsent(element, el -> {
+            String[] parts = el.dictionaryPath().parts();
+            StorageDictionary.PathElement result = dictionary.getByPath(parts);
+            return result;
+        });
     }
 
     public Element elementByPath(Object... pathParts) {
@@ -216,13 +220,15 @@ public class ContractData {
         private Ast.Type nestedType(String id) {
             if (type.isMapping()) {
                 return type.asMapping().getValueType();
-            } else if (type.isArray()) {
-                return type.asArray().getElementType();
-            } else if (type.isStruct()) {
-                return getStructFields(type.asStruct()).findByPosition(toInt(id)).getType();
-            } else {
-                throw new UnsupportedOperationException("Elementary type hasn't nested types");
             }
+            if (type.isArray()) {
+                return type.asArray().getElementType();
+            }
+            if (type.isStruct()) {
+                return getStructFields(type.asStruct()).findByPosition(toInt(id)).getType();
+            }
+
+            throw new UnsupportedOperationException("Elementary type hasn't nested types");
         }
 
         @Override
@@ -240,8 +246,8 @@ public class ContractData {
 
             Ast.Type parentType = getParent().getType();
             if (parentType.isStaticArray()) {
-                int reservedSlotsCount = this.type.isStruct() ? getStructFields(this.type.asStruct()).reservedSlotsCount() : 1;
-                int startIndex = toInt(path.remove(path.size() - 1)) + toInt(id) * reservedSlotsCount;
+                float reservedSlotsCount = this.type.isStruct() ? getStructFields(this.type.asStruct()).reservedSlotsCount() : (float) Member.size(type) / Member.BYTES_IN_SLOT;
+                int startIndex = toInt(path.removeLast()) + (int) (toInt(id) * reservedSlotsCount);
                 return path.extend(startIndex);
             }
 
@@ -252,9 +258,12 @@ public class ContractData {
 
             Element grandParent = getParent().getParent();
             if (parentType.isStruct() && (grandParent.isRoot() || !grandParent.getType().isMapping())) {
-                Object structOffset = path.remove(path.size() - 1);
-                int startIndex = member.getStorageIndex() + (structOffset instanceof String ? toInt((String) structOffset) : (int) structOffset);
+                int startIndex = member.getStorageIndex() + toInt(path.removeLast());
                 return path.extend(startIndex);
+            }
+
+            if (parentType.isStruct() && grandParent.getType().isMapping()) {
+                return path.extend(member.getStorageIndex());
             }
 
             return path.extend(id);
@@ -364,16 +373,27 @@ public class ContractData {
                 throw new UnsupportedOperationException("Cannot extract storage value for container element.");
             }
 
-            DataWord result = null;
+            DataWord value = null;
             StorageDictionary.PathElement pe = toDictionaryPathElement();
-            if (pe != null) {
-                result = valueExtractor.apply(new DataWord(pe.storageKey));
-                if (member != null) {
-                    result = member.extractValue(result);
+            if (nonNull(pe)) {
+                value = valueExtractor.apply(new DataWord(pe.storageKey));
+                if (nonNull(member)) {
+                    value = member.extractValue(value);
+                } else {
+                    Member parentMember = getParent().getMember();
+                    if (parentMember.getType().isStaticArray()) {
+                        Ast.Type.Array array = parentMember.getType().asArray();
+                        if (array.getSize() > parentMember.reservedSlotsCount()) {
+                            int typeSize = Member.size(array.getElementType());
+                            int index = toInt(id);
+
+                            value = extractPackedArrEl(value, index, typeSize);
+                        }
+                    }
                 }
             }
 
-            return result;
+            return value;
         }
 
         @Override
@@ -409,8 +429,8 @@ public class ContractData {
             Object result = rawValue;
 
             if (type.isEnum()) {
-                result = getEnumValueByOrdinal(type.asEnum(), (rawValue == null) ? 0 : rawValue.intValue());
-            } else if (type.isContract() && rawValue != null) {
+                result = getEnumValueByOrdinal(type.asEnum(), isNull(rawValue) ? 0 : rawValue.intValue());
+            } else if (type.isContract() && nonNull(rawValue)) {
                 result = toHexString(rawValue.getLast20Bytes());
             } else if (type.isElementary()) {
                 Ast.Type.Elementary elementary = type.asElementary();
@@ -425,11 +445,11 @@ public class ContractData {
                 } else if (elementary.is("bytes")) {
                     result = Hex.toHexString(bytesExtractor.get());
                 } else if (elementary.isBool()) {
-                    result = !(rawValue == null || rawValue.isZero());
-                } else if (elementary.isAddress() && rawValue != null) {
+                    result = !(isNull(rawValue) || rawValue.isZero());
+                } else if (elementary.isAddress() && nonNull(rawValue)) {
                     result = toHexString(rawValue.getLast20Bytes());
                 } else if (elementary.isNumber()) {
-                    result = (rawValue == null) ? 0 : rawValue.bigIntValue();
+                    result = isNull(rawValue) ? 0 : rawValue.bigIntValue();
                 }
             }
 
@@ -441,4 +461,12 @@ public class ContractData {
         return DATA_WORD_PATTERN.matcher(input).matches();
     }
 
+    private static DataWord extractPackedArrEl(DataWord slot, int index, int size) {
+        byte[] data = slot.getData();
+        int offset = (index + 1) % (Member.BYTES_IN_SLOT / size) * size;
+        int from = data.length - offset;
+        int to = from + size;
+
+        return new DataWord(ArrayUtils.subarray(data, from, to));
+    }
 }

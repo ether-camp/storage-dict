@@ -150,7 +150,7 @@ public class StorageEntry extends AbstractKeyValue implements Comparable<Storage
 
         Key.KeyBuilder key = Key.builder()
                 .kind(resolveKind(cde))
-                .encoded(pathElement == null ? null : pathElement.key)
+                .encoded(pathElement == null ? null : toHexString(pathElement.storageKey))
                 .decoded(cde.getKey())
                 .path(cde.path().toString());
 

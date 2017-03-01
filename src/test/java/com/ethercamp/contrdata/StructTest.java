@@ -2,6 +2,7 @@ package com.ethercamp.contrdata;
 
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
@@ -35,7 +36,7 @@ public class StructTest extends BaseTest {
         Ast.Contract astContract = getContractAllDataMembers(contractSource, "TestStruct");
 
         Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
-        ContractData contractData = new ContractData(astContract, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
+        ContractData contractData = new ContractData(astContract, dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress()));
 
         ContractData.Element element = contractData.elementByPath();
         List<ContractData.Element> members = element.getChildren(0, 20);

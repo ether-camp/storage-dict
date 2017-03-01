@@ -1,5 +1,6 @@
 package com.ethercamp.contrdata;
 
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -242,7 +243,7 @@ public class StorageDictionaryTest extends BaseTest {
         for (int k = 0; k < 50; k++) {
             byte[] contractAddr = ByteUtil.intToBytes(k);
 
-            StorageDictionary kp = db.getOrCreate(StorageDictionaryDb.Layout.Solidity, contractAddr);
+            StorageDictionary kp = db.getDictionaryFor(Layout.Lang.solidity, contractAddr);
             for (int j = 0; j < 2; j++) {
                 long s = System.currentTimeMillis();
                 for (int i = 0; i < 10000; i++) {
@@ -266,7 +267,7 @@ public class StorageDictionaryTest extends BaseTest {
             for (int k = 0; k < 5; k++) {
                 byte[] contractAddr = ByteUtil.intToBytes(k);
 
-                StorageDictionary kp = db.getOrCreate(StorageDictionaryDb.Layout.Solidity, contractAddr);
+                StorageDictionary kp = db.getDictionaryFor(Layout.Lang.solidity, contractAddr);
                 for (int i = 0; i < 10; i++) {
                     kp.addPath(createPath("0/" + (1000000 + i)));
 

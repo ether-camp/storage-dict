@@ -21,6 +21,8 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.ethercamp.contrdata.storage.dictionary.GuessUtils.guessValue;
+import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_BYTE_ARRAY;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.apache.commons.lang3.StringUtils.repeat;
@@ -319,7 +321,7 @@ public class StorageDictionary {
         }
 
         private PathElement[] decompactElement(PathElement pe) {
-            PathElement parent = new PathElement(pe.type, pe.key, getVirtualStorageKey(pe.storageKey));
+            PathElement parent = new PathElement(pe.type, pe.key, toVirtualStorageKey(pe.storageKey));
             dictionary.put(parent);
 
             PathElement child = new PathElement(Type.Offset, NO_OFFSET_KEY, pe.storageKey);
@@ -346,7 +348,7 @@ public class StorageDictionary {
             lastChildHash = null;
         }
 
-        public static byte[] getVirtualStorageKey(byte[] childStorageKey) {
+        public static byte[] toVirtualStorageKey(byte[] childStorageKey) {
             BigInteger i = bytesToBigInteger(childStorageKey).subtract(BigInteger.ONE);
             return bigIntegerToBytes(i, 32);
         }
@@ -399,10 +401,15 @@ public class StorageDictionary {
         }
 
         public PathElement findChildByKey(String key) {
-            return getChildrenStream()
-                    .filter(child -> StringUtils.equals(child.key, key))
-                    .findFirst()
-                    .orElse(null);
+            Iterator<PathElement> children = getChildrenIterator();
+            while (children.hasNext()) {
+                PathElement child = children.next();
+                if (StringUtils.equals(child.key, key)) {
+                    return child;
+                }
+            }
+
+            return null;
         }
 
         public boolean hasChildren() {
@@ -493,7 +500,7 @@ public class StorageDictionary {
 
             if (storageKey != null && storage != null) {
                 DataWord data = storage.get(new DataWord(storageKey));
-                s += " = " + (data == null ? "<null>" : StorageDictionaryHandler.guessValue(data.getData()));
+                s += " = " + (data == null ? "<null>" : guessValue(data.getData()));
             }
 
             s += "\n";
@@ -645,7 +652,7 @@ public class StorageDictionary {
         int startIdx = path.length - 1;
         PathElement existingPE = null;
         while (startIdx >= 0) {
-            if ((existingPE = get(path[startIdx].getHash())) != null) {
+            if (nonNull(existingPE = get(path[startIdx].getHash()))) {
                 break;
             }
             startIdx--;
@@ -675,7 +682,7 @@ public class StorageDictionary {
     }
 
     public static StorageDictionary readDmp(Map<String, String> dump) {
-        HashMapDB<byte[]> storageDb = new HashMapDB<byte[]>();
+        HashMapDB<byte[]> storageDb = new HashMapDB<>();
         dump.entrySet().stream().forEach(entry -> storageDb.put(Hex.decode(entry.getKey()), Hex.decode(entry.getValue())));
         return new StorageDictionary(storageDb);
     }

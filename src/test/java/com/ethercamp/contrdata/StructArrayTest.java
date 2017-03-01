@@ -5,6 +5,7 @@ import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.StoragePage;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -39,7 +40,7 @@ public class StructArrayTest extends BaseTest {
         blockchain.createBlock();
 
         Ast.Contract contractAst = getContractAllDataMembers(contractSource, "TestStructArray");
-        ContractData contractData = new ContractData(contractAst, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
+        ContractData contractData = new ContractData(contractAst, dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress()));
         contractData.elementByPath(0);
 
         ContractData.Element targetElement = contractData.elementByPath(0);

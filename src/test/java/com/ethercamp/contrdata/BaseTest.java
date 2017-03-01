@@ -4,6 +4,7 @@ import com.ethercamp.contrdata.config.ContractDataConfig;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Storage;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import org.ethereum.config.SystemProperties;
@@ -68,9 +69,7 @@ public abstract class BaseTest {
 
         @Bean
         public StorageDictionaryDb storageDictionaryDb() {
-            StorageDictionaryDb db = new StorageDictionaryDb();
-            db.setDataSource(storageDict());
-            return db;
+            return new StorageDictionaryDb(storageDict());
         }
     }
 
@@ -170,7 +169,7 @@ public abstract class BaseTest {
 
         @Override
         public Set<DataWord> keys(byte[] address) {
-            StorageDictionary storageDictionary = storageDictionaryDb.get(StorageDictionaryDb.Layout.Solidity, address);
+            StorageDictionary storageDictionary = storageDictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
             return isNull(storageDictionary)
                     ? emptySet()
                     : findKeysIn(address, storageDictionary.getByPath(), new HashSet<>());

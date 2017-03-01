@@ -4,8 +4,8 @@ import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.StorageEntry;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
-import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.ethereum.datasource.DbSource;
@@ -22,9 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 public class ContractDataServiceTest extends BaseTest {
 
@@ -47,7 +45,7 @@ public class ContractDataServiceTest extends BaseTest {
         blockchain.createBlock();
 
         Ast.Contract astContract = getContractAllDataMembers(nestingTestSol, "TestNestedStruct");
-        StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress());
 
         List<StorageEntry> entries = contractDataService.getContractData(contract.getAddress(), new ContractData(astContract, dictionary), false, Path.empty(), 0, 20).getEntries();
         System.out.println(mapper.writeValueAsString(entries));
@@ -86,7 +84,7 @@ public class ContractDataServiceTest extends BaseTest {
 
     private ContractData getContractData(byte[] address, Resource source, String contractName) throws IOException {
         Ast.Contract contract = getContractAllDataMembers(source, contractName);
-        StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, address);
 
         return new ContractData(contract, dictionary);
     }
@@ -102,7 +100,7 @@ public class ContractDataServiceTest extends BaseTest {
             final SolidityContract contract = blockchain.submitNewContract(resourceToString(nestingTestSol));
             blockchain.createBlock();
 
-            final StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
+            final StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress());
 //            dumpStorageDict(dictionary);
 //            clearStorageDict();
 
@@ -145,7 +143,7 @@ public class ContractDataServiceTest extends BaseTest {
 
         SolidityContract contract = blockchain.submitNewContract(resourceToString(nestingTestSol));
         blockchain.createBlock();
-        StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress());
 
         assertFalse(contractDataService.storageEntries(contract.getAddress()).isEmpty());
         assertFalse(dictionary.dmp().isEmpty());

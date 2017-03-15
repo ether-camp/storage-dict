@@ -1,2 +1,4 @@
 contract EmptyContract {
+
+    function EmptyContract() {}
 }

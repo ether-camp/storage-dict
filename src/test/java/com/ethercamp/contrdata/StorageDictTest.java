@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
+import org.ethereum.datasource.DbSource;
 import org.ethereum.datasource.leveldb.LevelDbDataSource;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
@@ -88,10 +89,10 @@ public class StorageDictTest extends BaseTest{
         }
 
         @Bean
-        public LevelDbDataSource storageDict() {
-            LevelDbDataSource dataSource = new LevelDbDataSource("storageDict");
-            dataSource.init();
-            return dataSource;
+        public DbSource<byte[]> storageDict() {
+            LevelDbDataSource ds = new LevelDbDataSource("storageDict");
+            ds.init();
+            return ds;
         }
     }
 
@@ -178,14 +179,15 @@ public class StorageDictTest extends BaseTest{
     }
 
     @Value("${classpath:contracts/struct/NestedStruct.sol}")
-    private Resource nestedStructeSource;
+    private Resource nestedStructSource;
 
     @Test
     public void nestedStructTest() throws IOException {
         byte[] address = Hex.decode("ab7648c7664da59badeb9fa321b8111e6f29bc3e");
 
+
         StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
-        Ast.Contract dataMembers = getContractAllDataMembers(nestedStructeSource, "NestedStruct");
+        Ast.Contract dataMembers = getContractAllDataMembers(nestedStructSource, "NestedStruct");
 
         StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(1,1,1), 0, 20);
         List<StorageEntry> entries = storagePage.getEntries();

@@ -3,7 +3,6 @@ package com.ethercamp.contrdata;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.dictionary.Layout;
-import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;

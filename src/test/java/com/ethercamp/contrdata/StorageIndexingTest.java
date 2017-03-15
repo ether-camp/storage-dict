@@ -5,7 +5,6 @@ import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.contract.Member;
 import com.ethercamp.contrdata.contract.Members;
 import com.ethercamp.contrdata.storage.dictionary.Layout;
-import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
@@ -53,15 +52,15 @@ public class StorageIndexingTest extends BaseTest {
         Member mBool = members.findByName("mBool");
         assertEquals(2, mBool.getStorageIndex());
         ContractData.Element mBoolElement = contractData.elementByPath(mBool.getPosition());
-        DataWord storageValue = mBoolElement.getStorageValue(valueExtractor);
-        assertEquals(new DataWord(1), storageValue);
+        assertEquals(new DataWord(1), mBoolElement.getStorageValue(valueExtractor));
 
 
         Member mAddress = members.findByName("mAddress");
         assertEquals(2, mAddress.getStorageIndex());
         ContractData.Element mAddressElement = contractData.elementByPath(mAddress.getPosition());
-        DataWord storageValue1 = mAddressElement.getStorageValue(valueExtractor);
-        assertEquals(new DataWord("000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), storageValue1);
+        assertEquals(new DataWord("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), mAddressElement.getStorageValue(valueExtractor));
+
+
     }
 
     @Test
@@ -95,9 +94,9 @@ public class StorageIndexingTest extends BaseTest {
         blockchain.createBlock();
 
         Ast.Contract astContract = getContractAllDataMembers(nestingTestSol, "TestNestedStruct");
+        ContractData contractData = new ContractData(astContract, dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress()));
         Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
 
-            ContractData contractData = new ContractData(astContract, dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress()));
         ContractData.Element element = contractData.elementByPath();
         List<ContractData.Element> members = element.getAllChildren();
         assertEquals(6, members.size());

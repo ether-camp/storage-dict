@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static java.util.stream.Collectors.toMap;
+import static org.ethereum.util.ByteUtil.toHexString;
 
 @Slf4j
 @Component
@@ -28,7 +29,7 @@ public class StorageDictionaryVmHook implements VMHook {
     @Autowired
     private List<Layout.DictPathResolver> pathResolvers;
     private java.util.Stack<StorageKeys> storageKeysStack = new java.util.Stack<>();
-    private Sha3Index sha3Index = new Sha3Index();
+    private java.util.Stack<Sha3Index> sha3IndexStack = new java.util.Stack<>();
 
     @PostConstruct
     public void initVmHook() {
@@ -43,6 +44,7 @@ public class StorageDictionaryVmHook implements VMHook {
     public void startPlay(Program program) {
         try {
             storageKeysStack.push(new StorageKeys());
+            sha3IndexStack.push(new Sha3Index());
         } catch (Throwable e) {
             log.error("Error within handler: ", e);
         }
@@ -64,7 +66,7 @@ public class StorageDictionaryVmHook implements VMHook {
                     DataWord size = stack.get(stack.size() - 2);
                     byte[] input = program.memoryChunk(offset.intValue(), size.intValue());
 
-                    sha3Index.add(input);
+                    sha3IndexStack.peek().add(input);
                     break;
             }
         } catch (Throwable e) {
@@ -76,7 +78,10 @@ public class StorageDictionaryVmHook implements VMHook {
     public void stopPlay(Program program) {
         try {
             final byte[] address = getContractAddress(program);
+
             final StorageKeys storageKeys = storageKeysStack.pop();
+            final Sha3Index sha3Index = sha3IndexStack.pop();
+
             final Map<Layout.Lang, StorageDictionary> dictByLang = pathResolvers.stream()
                     .collect(toMap(Layout.DictPathResolver::getLang, r -> dictionaryDb.getDictionaryFor(r.getLang(), address)));
 
@@ -92,14 +97,13 @@ public class StorageDictionaryVmHook implements VMHook {
 
             if (storageKeysStack.isEmpty()) {
                 dictionaryDb.flush();
-                sha3Index.clear();
             }
         } catch (Throwable e) {
-            log.error("Error within handler: ", e);
+            log.error("Error within handler address[" + toHexString(getContractAddress(program)) + "]: ", e);
         }
     }
 
-    private static class StorageKeys  {
+    private static class StorageKeys {
 
         private static final DataWord REMOVED_VALUE = new DataWord(0);
 

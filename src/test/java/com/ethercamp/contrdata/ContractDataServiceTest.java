@@ -8,10 +8,7 @@ import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.ethereum.datasource.DbSource;
 import org.ethereum.util.blockchain.SolidityContract;
-import org.ethereum.vm.VM;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,19 +18,19 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class ContractDataServiceTest extends BaseTest {
 
     @Autowired
     private ContractDataService contractDataService;
-    @Autowired
-    private DbSource<byte[]> storageDict;
 
+    @Value("classpath:contracts/TestDictRecovery.sol")
+    private Resource dictRecoveryTestSol;
     @Value("classpath:contracts/TestNestedStruct.sol")
     private Resource nestingTestSol;
-    @Value("classpath:contracts/TestNestedStruct.sol")
+    @Value("classpath:contracts/EmptyContract.sol")
     private Resource emptyContractSol;
 
     @Test
@@ -90,55 +87,6 @@ public class ContractDataServiceTest extends BaseTest {
     }
 
     @Test
-    @Ignore("may affect other tests")
-    public void index_shouldFillMissing() throws IOException {
-        final Ast.Contract astContract = getContractAllDataMembers(nestingTestSol, "TestNestedStruct");
-
-        VM.setVmHook(null);
-
-        {
-            final SolidityContract contract = blockchain.submitNewContract(resourceToString(nestingTestSol));
-            blockchain.createBlock();
-
-            final StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress());
-//            dumpStorageDict(dictionary);
-//            clearStorageDict();
-
-            final ContractData contractData = new ContractData(astContract, dictionary);
-
-            contractDataService.fillMissingKeys(contractData);
-//            dictionary.store();
-            dumpStorageDict(dictionary);
-
-            final List<StorageEntry> entries = contractDataService.getContractData(contract.getAddress(), contractData, false, Path.empty(), 0, 20).getEntries();
-
-            assertThat(entries.size(), is(8));
-            {
-                final StorageEntry entry = entries.get(0);
-                final StorageEntry.Value value = (StorageEntry.Value) entry.getValue();
-                final StorageEntry.Key key = (StorageEntry.Key) entry.getKey();
-                assertThat(key.getDecoded(), is("simple1"));
-                assertThat(value.getDecoded(), is("2"));
-            }
-            {
-                final StorageEntry entry = entries.get(7);
-                final StorageEntry.Value value = (StorageEntry.Value) entry.getValue();
-                final StorageEntry.Key key = (StorageEntry.Key) entry.getKey();
-                assertThat(key.getDecoded(), is("simple2"));
-                assertThat(value.getDecoded(), is("3"));
-            }
-            {
-                final List<StorageEntry> subEntries = contractDataService.getContractData(contract.getAddress(), contractData, false, Path.of("5", "1", "0"), 0, 20).getEntries();
-                final StorageEntry entry = subEntries.get(1);
-                final StorageEntry.Value value = (StorageEntry.Value) entry.getValue();
-                final StorageEntry.Key key = (StorageEntry.Key) entry.getKey();
-                assertThat(key.getDecoded(), is("name"));
-                assertThat(value.getDecoded(), is("Ann-1"));
-            }
-        }
-    }
-
-    @Test
     public void dumpTest() throws IOException {
 
         SolidityContract contract = blockchain.submitNewContract(resourceToString(nestingTestSol));
@@ -147,13 +95,5 @@ public class ContractDataServiceTest extends BaseTest {
 
         assertFalse(contractDataService.storageEntries(contract.getAddress()).isEmpty());
         assertFalse(dictionary.dmp().isEmpty());
-    }
-
-    private void clearStorageDict() {
-        ((HashMapDBExt) storageDict).source().clear();
-    }
-
-    private void dumpStorageDict(StorageDictionary dictionary) {
-        System.out.println("Test Dictionary dump " + dictionary.dump());
     }
 }

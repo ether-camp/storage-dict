@@ -85,8 +85,8 @@ public class ContractDataService {
             return new StoragePage(entries, page, size, pathElement.getChildrenCount());
         } catch (Exception e) {
             log.error(DetailedMsg.withTitle("Cannot build contract structured storage:")
-                    .add("address", address)
-                    .add("path", path)
+                    .add("address",address)
+                    .add("path",path)
                     .add("storageDictionary", dictionary.dmp())
                     .add("storage", storageEntries(address))
                     .toJson());

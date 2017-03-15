@@ -21,4 +21,8 @@ contract PackingTest {
         mStruct.fBool = true;
         mStruct.fInt = 256;
     }
+
+    function toggle() returns (bool enabled) {
+        return mBool = !mBool;
+    }
 }

@@ -1,6 +1,7 @@
 package com.ethercamp.contrdata.utils;
 
 import com.ethercamp.contrdata.storage.Storage;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import lombok.Getter;
@@ -29,7 +30,7 @@ public class BlockchainContractResource extends ContractResource {
 
     @Override
     protected StorageDictionary loadStorageDictionary() {
-        return dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, getContract().getAddress());
+        return dictionaryDb.getDictionaryFor(Layout.Lang.solidity, getContract().getAddress());
     }
 
     public BlockchainContractResource deploy(Object... args) {

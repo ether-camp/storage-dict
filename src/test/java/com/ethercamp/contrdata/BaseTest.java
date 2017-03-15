@@ -5,6 +5,7 @@ import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.Storage;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +15,7 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.FrontierConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.BlockchainImpl;
+import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.ContractDetails;
@@ -157,14 +159,14 @@ public abstract class BaseTest {
         Map<DataWord, DataWord> entries = storage.entries(contract.getAddress(), new ArrayList<>(keys));
         System.out.printf("Storage:\n%s\n", toJson(entries));
 
-        StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress());
         StorageDictionary.PathElement root = dictionary.getByPath();
         System.out.printf("Storage dictionary:\n%s\n", root.toString(details, 2));
     }
 
     protected ContractData getContractData(SolidityContract contract, String source, String contractName) throws IOException {
         Ast.Contract ast = getContractAllDataMembers(source, contractName);
-        StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress());
 
         return new ContractData(ast, dictionary);
     }

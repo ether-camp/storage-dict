@@ -284,15 +284,20 @@ public class ContractData {
 
             if (type.isStaticArray()) {
                 int offset = member.getStorageIndex();
-                int size = type.asArray().getSize() * slotsPerElement;
 
-                for (StorageDictionary.PathElement child : getParent().toDictionaryPathElement().getChildren()) {
-                    int current = toInt(child.key) - offset;
+                if (Member.BYTES_IN_SLOT / Member.size(type.asArray().getElementType()) > 1) {
+                    IntStream.range(0, type.asArray().getSize()).forEach(indexes::add);
+                } else {
+                    int size = type.asArray().getSize() * slotsPerElement;
 
-                    if (current >= size) break;
-                    if (current < 0) continue;
+                    for (StorageDictionary.PathElement child : getParent().toDictionaryPathElement().getChildren()) {
+                        int current = toInt(child.key) - offset;
 
-                    indexes.add(current / slotsPerElement);
+                        if (current >= size) break;
+                        if (current < 0) continue;
+
+                        indexes.add(current / slotsPerElement);
+                    }
                 }
             } else {
                 StorageDictionary.PathElement element = toDictionaryPathElement();

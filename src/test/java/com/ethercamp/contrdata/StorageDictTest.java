@@ -7,6 +7,7 @@ import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.StorageEntry;
 import com.ethercamp.contrdata.storage.StoragePage;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -107,7 +108,7 @@ public class StorageDictTest extends BaseTest{
     public void youtubeViewsTest() throws IOException {
         byte[] address = Hex.decode("956a285faa86b212ec51ad9da0ede6c8861e3a33");
 
-        StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(youtubeViewsSource, "YoutubeViews");
 
         StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.empty(), 0, 20);
@@ -126,7 +127,7 @@ public class StorageDictTest extends BaseTest{
     public void projectKudosTest() throws IOException {
         byte[] address = Hex.decode("bc4a3057325dfdde568f66ab70548df12d53aa85");
 
-        StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(projectKudosSource, "ProjectKudos");
 
         Path path = Path.of("3", "000000000000000000000000297e5d5d48fe9cbaa8cf2094e82e7dcb377dddff");
@@ -146,7 +147,7 @@ public class StorageDictTest extends BaseTest{
     public void etherPokerTableTest() throws IOException {
         byte[] address = Hex.decode("7d96e318ac2a5048a2f901e65a5c1d610cfb8094");
 
-        StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(etherPokerTableSource, "EtherPokerTable");
 
         StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(8, 0), 0, 20);
@@ -166,7 +167,7 @@ public class StorageDictTest extends BaseTest{
     public void boolTestTest() throws IOException {
         byte[] address = Hex.decode("85a6ef0ae351abffb1200aa605cb7e3058072ae3");
 
-        StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
+        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(boolTestSource, "BoolTest");
 
         StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(0), 0, 20);
@@ -178,14 +179,15 @@ public class StorageDictTest extends BaseTest{
     }
 
     @Value("${classpath:contracts/struct/NestedStruct.sol}")
-    private Resource nestedStructeSource;
+    private Resource nestedStructSource;
 
     @Test
     public void nestedStructTest() throws IOException {
         byte[] address = Hex.decode("ab7648c7664da59badeb9fa321b8111e6f29bc3e");
 
-        StorageDictionary dictionary = dictionaryDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, address);
-        Ast.Contract dataMembers = getContractAllDataMembers(nestedStructeSource, "NestedStruct");
+
+        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
+        Ast.Contract dataMembers = getContractAllDataMembers(nestedStructSource, "NestedStruct");
 
         StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(1,1,1), 0, 20);
         List<StorageEntry> entries = storagePage.getEntries();

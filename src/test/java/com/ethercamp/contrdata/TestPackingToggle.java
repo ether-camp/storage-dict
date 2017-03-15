@@ -5,8 +5,8 @@ import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.StorageEntry;
 import com.ethercamp.contrdata.storage.StoragePage;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
-import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.ethereum.util.blockchain.SolidityCallResult;
@@ -35,7 +35,7 @@ public class TestPackingToggle extends BaseTest {
         SolidityContract contract = blockchain.submitNewContract(source, "PackingTest");
 
         Ast.Contract astContract = getContractAllDataMembers(source, "PackingTest");
-        StorageDictionary dictionary = dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress());
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress());
         ContractData contractData = new ContractData(astContract, dictionary);
 
         StoragePage page = contractDataService.getContractData(contract.getAddress(), contractData, false, Path.empty(), 0, 100);

@@ -4,7 +4,7 @@ import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.contract.Member;
 import com.ethercamp.contrdata.contract.Members;
-import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
+import com.ethercamp.contrdata.storage.dictionary.Layout;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
@@ -32,7 +32,7 @@ public class StorageIndexingTest extends BaseTest {
         blockchain.createBlock();
 
         Ast.Contract astContract = getContractAllDataMembers(packingTest1Sol, "PackingTest");
-        ContractData contractData = new ContractData(astContract, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
+        ContractData contractData = new ContractData(astContract, dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress()));
 
         Members members = contractData.getMembers();
         assertNotNull(members);
@@ -66,7 +66,7 @@ public class StorageIndexingTest extends BaseTest {
     @Test
     public void packingTest2() throws IOException {
         Ast.Contract contract = getContractAllDataMembers(packingTest2Sol, "TestBoolAfterPackedStruct");
-        ContractData contractData = new ContractData(contract, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, Hex.decode("")));
+        ContractData contractData = new ContractData(contract, dictDb.getDictionaryFor(Layout.Lang.solidity, Hex.decode("")));
         Members members = contractData.getMembers();
 
         assertNotNull(members);
@@ -94,7 +94,7 @@ public class StorageIndexingTest extends BaseTest {
         blockchain.createBlock();
 
         Ast.Contract astContract = getContractAllDataMembers(nestingTestSol, "TestNestedStruct");
-        ContractData contractData = new ContractData(astContract, dictDb.getOrCreate(StorageDictionaryDb.Layout.Solidity, contract.getAddress()));
+        ContractData contractData = new ContractData(astContract, dictDb.getDictionaryFor(Layout.Lang.solidity, contract.getAddress()));
         Function<DataWord, DataWord> valueExtractor = newValueExtractor(contract);
 
         ContractData.Element element = contractData.elementByPath();

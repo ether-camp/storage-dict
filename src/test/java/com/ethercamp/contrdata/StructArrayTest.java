@@ -1,13 +1,6 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
-import com.ethercamp.contrdata.storage.Path;
-import com.ethercamp.contrdata.storage.Storage;
-import com.ethercamp.contrdata.storage.StoragePage;
-import com.ethercamp.contrdata.storage.dictionary.Layout;
-import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
-import com.ethercamp.contrdata.utils.RandomUtils;
 import org.ethereum.util.blockchain.SolidityCallResult;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
@@ -18,17 +11,11 @@ import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 
-import static com.ethercamp.contrdata.storage.Path.parseHumanReadable;
 import static com.ethercamp.contrdata.utils.RandomUtils.randomBytes;
-import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.spongycastle.util.encoders.Hex.toHexString;
 
 public class StructArrayTest extends BaseTest {
 

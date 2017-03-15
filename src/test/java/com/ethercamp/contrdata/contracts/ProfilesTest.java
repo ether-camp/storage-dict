@@ -8,11 +8,8 @@ import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.StoragePage;
 import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
-import org.ethereum.core.BlockchainImpl;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.util.blockchain.SolidityCallResult;
 import org.ethereum.util.blockchain.SolidityContract;
-import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +17,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
 
 public class ProfilesTest extends BaseTest {
 

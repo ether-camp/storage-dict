@@ -8,8 +8,6 @@ import com.ethercamp.contrdata.storage.Path;
 import com.ethercamp.contrdata.storage.StorageEntry;
 import com.ethercamp.contrdata.storage.StoragePage;
 import com.ethercamp.contrdata.storage.dictionary.Layout;
-import com.ethercamp.contrdata.utils.ContractInfo;
-import com.ethercamp.contrdata.utils.RealContractResource;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;

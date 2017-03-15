@@ -4,7 +4,6 @@ import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
-import lombok.Getter;
 import org.ethereum.core.BlockchainImpl;
 import org.ethereum.util.blockchain.LocalBlockchain;
 import org.ethereum.util.blockchain.SolidityContract;

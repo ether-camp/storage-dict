@@ -8,8 +8,6 @@ import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.ethereum.solidity.compiler.SolidityCompiler;
-import org.ethereum.util.blockchain.LocalBlockchain;
-import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 

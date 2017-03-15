@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static java.util.stream.Collectors.toMap;
-import static org.ethereum.crypto.HashUtil.sha3;
 import static org.ethereum.util.ByteUtil.toHexString;
 
 @Slf4j

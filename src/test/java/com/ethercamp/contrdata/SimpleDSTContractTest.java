@@ -10,7 +10,6 @@ import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import org.ethereum.core.BlockchainImpl;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;

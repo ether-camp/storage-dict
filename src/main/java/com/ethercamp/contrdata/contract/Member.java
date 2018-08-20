@@ -95,7 +95,7 @@ public class Member {
         int size = size(getType());
         int from = getSlotFreeSpace();
 
-        return new DataWord(subarray(slot.getData(), from, from + size));
+        return DataWord.of(subarray(slot.getData(), from, from + size));
     }
 
     static int size(Ast.Type type) {

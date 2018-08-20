@@ -1,3 +1,5 @@
+pragma solidity ^0.4.0;
+
 //                       , ; ,   .-'"""'-.   , ; ,
 //                       \\|/  .'          '.  \|//
 //                        \-;-/   ()   ()   \-;-/
@@ -78,7 +80,7 @@ contract Rouleth
     //        Management & Config FUNCTIONS        //
     //**********************************************
 
-    function  Rouleth() private //creation settings
+    function  Rouleth() internal //creation settings
     {
         developer = msg.sender;
         blockDelay=1; //indicates which block after bet will be used for RNG
@@ -92,7 +94,7 @@ contract Rouleth
     modifier onlyDeveloper()
     {
 	if (msg.sender!=developer) throw;
-	_
+	_;
     }
 
     function changeDeveloper_only_Dev(address new_dev)
@@ -109,7 +111,7 @@ contract Rouleth
 	{
 	    throw;
 	}
-        _
+        _;
     }
 
 
@@ -135,7 +137,7 @@ contract Rouleth
     modifier onlyActive()
     {
         if (contract_state==States.inactive) throw;
-        _
+        _;
     }
 
 
@@ -254,7 +256,7 @@ contract Rouleth
         if (gambles.length!=0 && block.number==gambles[gambles.length-1].blockNumber) nbBetsCurrentBlock+=1;
         else nbBetsCurrentBlock=0;
         if (nbBetsCurrentBlock>=maxBetsPerBlock) throw;
-        _
+        _;
     }
 
 

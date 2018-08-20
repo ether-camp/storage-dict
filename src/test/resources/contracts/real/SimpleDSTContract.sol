@@ -1110,14 +1110,14 @@ contract DSTContract is StandardToken{
     // *     Modifiers     * //
     // ********************* //
 
-    modifier onlyBeforeEnd() {  }
-    modifier onlyAfterEnd()  { }
+    modifier onlyBeforeEnd() { _; }
+    modifier onlyAfterEnd()  { _; }
 
-    modifier onlyAfterTradingStart()  {  }
+    modifier onlyAfterTradingStart()  { _; }
 
-    modifier onlyExecutive()     {  }
+    modifier onlyExecutive()     { _; }
 
-    modifier onlyIfAbleToIssueTokens()  {  }
+    modifier onlyIfAbleToIssueTokens()  { _; }
 
 
     // ****************** //

@@ -499,7 +499,7 @@ public class StorageDictionary {
             String s = (isEmpty(storageKey) ? repeat(" ", 64) : toHexString(storageKey)) + " : " + repeat("  ", indent) + this;
 
             if (storageKey != null && storage != null) {
-                DataWord data = storage.get(new DataWord(storageKey));
+                DataWord data = storage.get(DataWord.of(storageKey));
                 s += " = " + (data == null ? "<null>" : guessValue(data.getData()));
             }
 
@@ -709,7 +709,7 @@ public class StorageDictionary {
             if (child.hasChildren()) {
                 findKeysIn(child, keys);
             } else {
-                keys.add(new DataWord(child.storageKey));
+                keys.add(DataWord.of(child.storageKey));
             }
         });
         return keys;

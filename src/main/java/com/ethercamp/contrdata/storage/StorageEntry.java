@@ -138,7 +138,7 @@ public class StorageEntry extends AbstractKeyValue implements Comparable<Storage
                 .size(pe.getChildrenCount());
 
         if (!pe.hasChildren()) {
-            DataWord storageValue = valueExtractor.apply(new DataWord(pe.storageKey));
+            DataWord storageValue = valueExtractor.apply(DataWord.of(pe.storageKey));
             value.encoded(Objects.toString(storageValue, null));
         }
 

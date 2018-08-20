@@ -76,7 +76,7 @@ public class RoulethTest extends BaseTest {
     public void testStorage() throws IOException {
 /*
         Map<DataWord, DataWord> map = new HashMap<DataWord, DataWord>() {{
-            IntStream.range(0, 10).boxed().forEach(i -> put(new DataWord(i), new DataWord((i + 1) * 3)));
+            IntStream.range(0, 10).boxed().forEach(i -> put(DataWord.of(i), DataWord.of((i + 1) * 3)));
         }};
 
         map = new ObjectMapper().readValue(toJson(map), new TypeReference<Map<DataWord, DataWord>>() {

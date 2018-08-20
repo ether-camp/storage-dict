@@ -186,7 +186,7 @@ public class ContractDataService {
                 final StorageDictionary.PathElement pe = new StorageDictionary.PathElement();
                 pe.type = StorageDictionary.PathElement.Type.StorageIndex;
                 pe.key = String.valueOf(member.getStorageIndex() + addition);
-                pe.storageKey = new DataWord(intToBytes(member.getStorageIndex() + addition)).getData();
+                pe.storageKey = DataWord.of(intToBytes(member.getStorageIndex() + addition)).getData();
 
                 root.addChild(pe);
 

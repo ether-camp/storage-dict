@@ -52,13 +52,13 @@ public class StorageIndexingTest extends BaseTest {
         Member mBool = members.findByName("mBool");
         assertEquals(2, mBool.getStorageIndex());
         ContractData.Element mBoolElement = contractData.elementByPath(mBool.getPosition());
-        assertEquals(new DataWord(1), mBoolElement.getStorageValue(valueExtractor));
+        assertEquals(DataWord.ONE, mBoolElement.getStorageValue(valueExtractor));
 
 
         Member mAddress = members.findByName("mAddress");
         assertEquals(2, mAddress.getStorageIndex());
         ContractData.Element mAddressElement = contractData.elementByPath(mAddress.getPosition());
-        assertEquals(new DataWord("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), mAddressElement.getStorageValue(valueExtractor));
+        assertEquals(DataWord.of("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), mAddressElement.getStorageValue(valueExtractor));
 
 
     }
@@ -74,7 +74,7 @@ public class StorageIndexingTest extends BaseTest {
         assertEquals(0, members.findByName("mStruct").getStorageIndex());
         assertEquals(1, members.findByName("mBool").getStorageIndex());
 
-        DataWord packedStruct = new DataWord("00000000000000000000001c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c00");
+        DataWord packedStruct = DataWord.of("00000000000000000000001c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c00");
 
         Members structFields = contractData.getStructFields("Struct");
         DataWord fBool = structFields.findByName("fBool").extractValue(packedStruct);

@@ -367,7 +367,7 @@ public class ContractData {
                 result = member.getName();
             } else if (getParent().getType().isMapping() && isDataWord(id)) {
                 Ast.Type type = getParent().getType().asMapping().getKeyType();
-                result = guessRawValueType(new DataWord(id), type, () -> id.getBytes()).toString();
+                result = guessRawValueType(DataWord.of(id), type, () -> id.getBytes()).toString();
             }
 
             return result;
@@ -382,7 +382,7 @@ public class ContractData {
             DataWord value = null;
             StorageDictionary.PathElement pe = toDictionaryPathElement();
             if (nonNull(pe)) {
-                value = valueExtractor.apply(new DataWord(pe.storageKey));
+                value = valueExtractor.apply(DataWord.of(pe.storageKey));
                 if (nonNull(member)) {
                     value = member.extractValue(value);
                 } else {
@@ -414,7 +414,7 @@ public class ContractData {
 
                 if (pathElement.hasChildren()) {
                     byte[][] bytes = pathElement.getChildrenStream()
-                            .map(child -> valueExtractor.apply(new DataWord(child.storageKey)))
+                            .map(child -> valueExtractor.apply(DataWord.of(child.storageKey)))
                             .filter(Objects::nonNull)
                             .map(DataWord::getData)
                             .toArray(byte[][]::new);
@@ -424,7 +424,7 @@ public class ContractData {
                     }
                 }
 
-                DataWord value = valueExtractor.apply(new DataWord(pathElement.storageKey));
+                DataWord value = valueExtractor.apply(DataWord.of(pathElement.storageKey));
                 return (value == null) ? EMPTY_BYTE_ARRAY : value.getData();
             });
 
@@ -473,6 +473,6 @@ public class ContractData {
         int from = data.length - offset;
         int to = from + size;
 
-        return new DataWord(ArrayUtils.subarray(data, from, to));
+        return DataWord.of(ArrayUtils.subarray(data, from, to));
     }
 }

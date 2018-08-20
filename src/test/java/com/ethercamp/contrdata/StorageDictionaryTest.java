@@ -25,10 +25,10 @@ public class StorageDictionaryTest extends BaseTest {
     //    @Test
 //    public void simpleTest() throws Exception {
 //        StorageDictionary kp = new StorageDictionary();
-//        kp.addPath(new DataWord("1111"), createPath("a/b1/c1"));
-//        kp.addPath(new DataWord("1112"), createPath("a/b1"));
-//        kp.addPath(new DataWord("1113"), createPath("a/b1/c2"));
-//        kp.addPath(new DataWord("1114"), createPath("a/b2/c1"));
+//        kp.addPath(DataWord.of("1111"), createPath("a/b1/c1"));
+//        kp.addPath(DataWord.of("1112"), createPath("a/b1"));
+//        kp.addPath(DataWord.of("1113"), createPath("a/b1/c2"));
+//        kp.addPath(DataWord.of("1114"), createPath("a/b2/c1"));
 //        logger.info(kp.dump());
 //
 //        ObjectMapper om = new ObjectMapper();
@@ -43,10 +43,10 @@ public class StorageDictionaryTest extends BaseTest {
 //    @Test
 //    public void dbTest() throws Exception {
 //        StorageDictionary kp = new StorageDictionary();
-//        kp.addPath(new DataWord("1111"), createPath("a/b1/c1"));
-//        kp.addPath(new DataWord("1112"), createPath("a/b1"));
-//        kp.addPath(new DataWord("1113"), createPath("a/b1/c2"));
-//        kp.addPath(new DataWord("1114"), createPath("a/b2/c1"));
+//        kp.addPath(DataWord.of("1111"), createPath("a/b1/c1"));
+//        kp.addPath(DataWord.of("1112"), createPath("a/b1"));
+//        kp.addPath(DataWord.of("1113"), createPath("a/b1/c2"));
+//        kp.addPath(DataWord.of("1114"), createPath("a/b2/c1"));
 //        logger.info(kp.dump());
 //
 //        StorageDictionaryDb dictDb = StorageDictionaryDb.INST;
@@ -60,13 +60,13 @@ public class StorageDictionaryTest extends BaseTest {
 //        dictDb.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
 //
 //        Assert.assertTrue(kp.isValid());
-//        kp.addPath(new DataWord("1114"), createPath("a/b2/c1"));
+//        kp.addPath(DataWord.of("1114"), createPath("a/b2/c1"));
 //
 //        Assert.assertTrue(kp.isValid());
 //        dictDb.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
 //
-//        kp.addPath(new DataWord("1115"), createPath("a/b2/c2"));
-//        kp.addPath(new DataWord("1115"), createPath("a/b2/c3"));
+//        kp.addPath(DataWord.of("1115"), createPath("a/b2/c2"));
+//        kp.addPath(DataWord.of("1115"), createPath("a/b2/c3"));
 //
 //        dictDb.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
 //
@@ -94,9 +94,9 @@ public class StorageDictionaryTest extends BaseTest {
 //            StorageDictionary.PathElement val12 = new StorageDictionary.PathElement(StorageDictionary.Type.Offset, 0);
 //
 //            StorageDictionary d = new StorageDictionary();
-//            d.addPath(new DataWord(0x7000), new StorageDictionary.PathElement[]{
+//            d.addPath(DataWord.of(0x7000), new StorageDictionary.PathElement[]{
 //                    field1, key1, val11});
-//            d.addPath(new DataWord(0x7001), new StorageDictionary.PathElement[]{field1, key2, val12});
+//            d.addPath(DataWord.of(0x7001), new StorageDictionary.PathElement[]{field1, key2, val12});
 //
 //            logger.info("\n" + d.root.toString(null, 0));
 //            logger.info("\n" + d.root.toString(null, 0));
@@ -118,8 +118,8 @@ public class StorageDictionaryTest extends BaseTest {
 //            StorageDictionary.PathElement val2 = new StorageDictionary.PathElement(StorageDictionary.Type.Offset, 1);
 //
 //            StorageDictionary d = new StorageDictionary();
-//            d.addPath(new DataWord(0x7000), new StorageDictionary.PathElement[]{field1, key1, val11});
-//            d.addPath(new DataWord(0x7001), new StorageDictionary.PathElement[]{field1, key2, val2});
+//            d.addPath(DataWord.of(0x7000), new StorageDictionary.PathElement[]{field1, key1, val11});
+//            d.addPath(DataWord.of(0x7001), new StorageDictionary.PathElement[]{field1, key2, val2});
 //
 //            logger.info("\n" + d.root.toString(null, 0));
 //            logger.info("\n" + d.root.toString(null, 0));
@@ -167,7 +167,7 @@ public class StorageDictionaryTest extends BaseTest {
 //    static Set<DataWord> createHashKeys(String ... ss) {
 //        Set<DataWord> ret = new HashSet<>();
 //        for (String s : ss) {
-//            ret.add(new DataWord(s));
+//            ret.add(DataWord.of(s));
 //        }
 //        return ret;
 //    }
@@ -191,17 +191,17 @@ public class StorageDictionaryTest extends BaseTest {
 //        System.out.println(d.serializeToJson());
 //
 ////        StorageDictionary kp = new StorageDictionary();
-////        kp.addPath(new DataWord("1111"), createPath("a/b1/c1"));
+////        kp.addPath(DataWord.of("1111"), createPath("a/b1/c1"));
 ////        dictDb.put(StorageDictionaryDb.Layout.Solidity, Hex.decode("abcdef"), kp);
 //    }
 //
 ////    @Test
 //    public void stressTest() throws Exception {
 //        StorageDictionary kp = new StorageDictionary();
-//        kp.addPath(new DataWord("1111"), createPath("a/b1/c1"));
-//        kp.addPath(new DataWord("1112"), createPath("a/b1"));
-//        kp.addPath(new DataWord("1113"), createPath("a/b1/c2"));
-//        kp.addPath(new DataWord("1114"), createPath("a/b2/c1"));
+//        kp.addPath(DataWord.of("1111"), createPath("a/b1/c1"));
+//        kp.addPath(DataWord.of("1112"), createPath("a/b1"));
+//        kp.addPath(DataWord.of("1113"), createPath("a/b1/c2"));
+//        kp.addPath(DataWord.of("1114"), createPath("a/b2/c1"));
 //        logger.info(kp.dump());
 //
 //        StorageDictionaryDb dictDb = StorageDictionaryDb.INST;
@@ -214,7 +214,7 @@ public class StorageDictionaryTest extends BaseTest {
 //
 //        int cnt = 0;
 //        while(true) {
-//            kp.addPath(new DataWord("1114"), createPath("a/b2/c" + (cnt++)));
+//            kp.addPath(DataWord.of("1114"), createPath("a/b2/c" + (cnt++)));
 //            contractAddr[0]++;
 //            dictDb.put(StorageDictionaryDb.Layout.Solidity, contractAddr, kp);
 //            dictDb.put(StorageDictionaryDb.Layout.Serpent, contractAddr, kp);

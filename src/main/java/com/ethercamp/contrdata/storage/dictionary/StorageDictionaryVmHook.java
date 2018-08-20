@@ -105,12 +105,12 @@ public class StorageDictionaryVmHook implements VMHook {
 
     private static class StorageKeys {
 
-        private static final DataWord REMOVED_VALUE = new DataWord(0);
+        private static final DataWord REMOVED_VALUE = DataWord.ZERO;
 
         private final Map<ByteArrayWrapper, Boolean> keys = new HashMap<>();
 
         public void add(DataWord key, DataWord value) {
-            keys.put(new ByteArrayWrapper(key.clone().getData()), isRemoved(value));
+            keys.put(new ByteArrayWrapper(key.getData()), isRemoved(value));
         }
 
         public void forEach(BiConsumer<? super ByteArrayWrapper, ? super Boolean> action) {

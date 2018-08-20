@@ -67,7 +67,7 @@ public class Sha3Index {
     private final Map<Sha3Output, Entry> idx = new HashMap<>();
 
     protected void add(int i) {
-        byte[] input = new DataWord(i).getData();
+        byte[] input = DataWord.of(i).getData();
         Sha3Output output = Sha3Output.calc(input);
         idx.put(output, new Entry(output.getData(), input));
     }

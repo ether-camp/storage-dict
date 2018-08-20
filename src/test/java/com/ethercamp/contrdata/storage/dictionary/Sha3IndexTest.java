@@ -47,7 +47,7 @@ public class Sha3IndexTest {
         assertEquals(0, index.size());
 
         IntStream.range(0, 1000).forEach(i -> {
-            byte[] decoded = new DataWord(i).getData();
+            byte[] decoded = DataWord.of(i).getData();
             index.add(decoded);
 
             assertAdded(decoded, index);

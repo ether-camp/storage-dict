@@ -1,5 +1,5 @@
 group 'com.ethercamp'
-version '1.4.0-SNAPSHOT'
+version '1.9.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'maven'
@@ -33,7 +33,7 @@ dependencies {
     compile "org.projectlombok:lombok:1.16.4"
     compile "commons-codec:commons-codec:1.10"
 
-    compile ("org.ethereum:ethereumj-core:1.4.0-SNAPSHOT")
+    compile ("org.ethereum:ethereumj-core:1.9.0-SNAPSHOT")
 
     testCompile "junit:junit:4.12"
     testCompile "org.springframework:spring-test:4.2.0.BUILD-SNAPSHOT"

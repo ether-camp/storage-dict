@@ -1,6 +1,5 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.config.ContractDataConfig;
 import com.ethercamp.contrdata.contract.Ast;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Path;
@@ -9,13 +8,10 @@ import com.ethercamp.contrdata.storage.StorageEntry;
 import com.ethercamp.contrdata.storage.StoragePage;
 import com.ethercamp.contrdata.storage.dictionary.Layout;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
-import com.ethercamp.contrdata.storage.dictionary.StorageDictionaryDb;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
-import org.ethereum.datasource.DbSource;
-import org.ethereum.datasource.leveldb.LevelDbDataSource;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -25,19 +21,23 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
+import org.springframework.test.context.ContextHierarchy;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toMap;
 import static org.ethereum.util.ByteUtil.toHexString;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
-@ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
-        ContractDataConfig.class, BaseTest.Config.class, StorageDictTest.Config.class
-})
-public class StorageDictTest extends BaseTest{
+@ContextHierarchy(@ContextConfiguration(classes = StorageDictTest.Config.class))
+public class StorageDictTest extends BaseTest {
 
     @Configuration
     static class Config {
@@ -87,17 +87,8 @@ public class StorageDictTest extends BaseTest{
                 throw new RuntimeException(e);
             }
         }
-
-        @Bean
-        public DbSource<byte[]> storageDict() {
-            LevelDbDataSource ds = new LevelDbDataSource("storageDict");
-            ds.init();
-            return ds;
-        }
     }
 
-    @Autowired
-    private StorageDictionaryDb dictionaryDb;
     @Autowired
     private ContractDataService contractDataService;
 
@@ -108,7 +99,7 @@ public class StorageDictTest extends BaseTest{
     public void youtubeViewsTest() throws IOException {
         byte[] address = Hex.decode("956a285faa86b212ec51ad9da0ede6c8861e3a33");
 
-        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(youtubeViewsSource, "YoutubeViews");
 
         StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.empty(), 0, 20);
@@ -127,7 +118,7 @@ public class StorageDictTest extends BaseTest{
     public void projectKudosTest() throws IOException {
         byte[] address = Hex.decode("bc4a3057325dfdde568f66ab70548df12d53aa85");
 
-        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(projectKudosSource, "ProjectKudos");
 
         Path path = Path.of("3", "000000000000000000000000297e5d5d48fe9cbaa8cf2094e82e7dcb377dddff");
@@ -147,7 +138,7 @@ public class StorageDictTest extends BaseTest{
     public void etherPokerTableTest() throws IOException {
         byte[] address = Hex.decode("7d96e318ac2a5048a2f901e65a5c1d610cfb8094");
 
-        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(etherPokerTableSource, "EtherPokerTable");
 
         StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(8, 0), 0, 20);
@@ -167,7 +158,7 @@ public class StorageDictTest extends BaseTest{
     public void boolTestTest() throws IOException {
         byte[] address = Hex.decode("85a6ef0ae351abffb1200aa605cb7e3058072ae3");
 
-        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(boolTestSource, "BoolTest");
 
         StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(0), 0, 20);
@@ -186,10 +177,10 @@ public class StorageDictTest extends BaseTest{
         byte[] address = Hex.decode("ab7648c7664da59badeb9fa321b8111e6f29bc3e");
 
 
-        StorageDictionary dictionary = dictionaryDb.getDictionaryFor(Layout.Lang.solidity, address);
+        StorageDictionary dictionary = dictDb.getDictionaryFor(Layout.Lang.solidity, address);
         Ast.Contract dataMembers = getContractAllDataMembers(nestedStructSource, "NestedStruct");
 
-        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(1,1,1), 0, 20);
+        StoragePage storagePage = contractDataService.getContractData(address, new ContractData(dataMembers, dictionary), false, Path.of(1, 1, 1), 0, 20);
         List<StorageEntry> entries = storagePage.getEntries();
 
         assertNotNull(entries);
@@ -201,7 +192,7 @@ public class StorageDictTest extends BaseTest{
 
         private static final ObjectMapper MAPPER = new ObjectMapper();
 
-        static class Entry extends DefaultKeyValue<DataWord, DataWord>{
+        static class Entry extends DefaultKeyValue<DataWord, DataWord> {
             public String type;
         }
 

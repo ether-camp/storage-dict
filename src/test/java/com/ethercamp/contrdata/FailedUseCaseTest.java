@@ -1,12 +1,9 @@
 package com.ethercamp.contrdata;
 
-import com.ethercamp.contrdata.config.ContractDataConfig;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ethereum.datasource.DbSource;
-import org.ethereum.datasource.inmem.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -16,7 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
+import org.springframework.test.context.ContextHierarchy;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,13 +25,11 @@ import static java.lang.String.format;
 import static org.ethereum.util.ByteUtil.toHexString;
 import static org.junit.Assert.fail;
 
-@ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
-        ContractDataConfig.class, BaseTest.Config.class, FailedUseCaseTest.Config.class
-})
+@ContextHierarchy(@ContextConfiguration(classes = FailedUseCaseTest.Config.class))
 public class FailedUseCaseTest extends BaseTest {
 
     @Configuration
-    static class Config  {
+    static class Config {
 
         private Map<String, Map<DataWord, DataWord>> storages = new HashMap<>();
 
@@ -103,11 +98,6 @@ public class FailedUseCaseTest extends BaseTest {
                 }
             };
         }
-
-        @Bean
-        public DbSource storageDict() {
-            return new HashMapDB();
-        }
     }
 
 
@@ -117,7 +107,7 @@ public class FailedUseCaseTest extends BaseTest {
     private ContractDataService contractDataService;
 
     @Test
-    public void test() throws IOException {
+    public void test() {
         for (FailedUseCase useCase : useCases) {
             byte[] address = Hex.decode(useCase.getAddress());
             StorageDictionary dictionary = StorageDictionary.readDmp(useCase.getStorageDictionary());

@@ -1,12 +1,12 @@
 package com.ethercamp.contrdata.utils;
 
-import com.ethercamp.contrdata.BaseTest;
 import com.ethercamp.contrdata.contract.ContractData;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Getter;
 import org.ethereum.datasource.Source;
+import org.ethereum.datasource.inmem.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
@@ -52,7 +52,7 @@ public class RealContractResource extends ContractResource {
     @Override
     protected StorageDictionary loadStorageDictionary() {
         Map<String, String> map = loader.loadCompressedJsonAsObject(TypeRefs.STRING_MAP, "real", getName(), address, "dictionary.gz");
-        Source<byte[], byte[]> ds = new BaseTest.HashMapDBExt();
+        Source<byte[], byte[]> ds = new HashMapDB();
         map.forEach((key, value) -> ds.put(Hex.decode(key), Hex.decode(value)));
         return new StorageDictionary(ds);
     }

@@ -5,7 +5,6 @@ import org.ethereum.util.blockchain.SolidityCallResult;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 
@@ -65,9 +64,6 @@ public class StructArrayTest extends BaseTest {
         assertEquals(husbandId.toString(), getElement(cd, "register[%s].husband", marriageId).getValue(valueExtractor));
         assertNotNull(getElement(cd, "register[%s].marriageDate", marriageId).getValue(valueExtractor));
     }
-
-    @Autowired
-    private ContractDataService contractDataService;
 
     private String shiftedArraySrc;
 

@@ -1,6 +1,5 @@
 package com.ethercamp.contrdata.utils;
 
-import com.ethercamp.contrdata.BaseTest;
 import com.ethercamp.contrdata.storage.Storage;
 import com.ethercamp.contrdata.storage.dictionary.StorageDictionary;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -12,6 +11,7 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.http.client.fluent.Request;
 import org.ethereum.datasource.Source;
+import org.ethereum.datasource.inmem.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
@@ -82,6 +82,7 @@ public final class StorageLoader {
                     .execute()
                     .handleResponse(response -> OBJECT_MAPPER.readValue(response.getEntity().getContent(), StoragePage.class));
         }
+
         public static StoragePage loadAll(final String stateServiceUrl, String address) throws IOException {
             return load(stateServiceUrl, address, 0, Integer.MAX_VALUE);
         }
@@ -101,7 +102,7 @@ public final class StorageLoader {
 
     public static StorageDictionary loadStorageDictionary(final String stateServiceUrl, String address) throws IOException {
         Map<String, String> dump = loadStorageDictionaryDump(stateServiceUrl, address);
-        Source<byte[], byte[]> ds = new BaseTest.HashMapDBExt();
+        Source<byte[], byte[]> ds = new HashMapDB();
         dump.forEach((k, v) -> ds.put(Hex.decode(k), Hex.decode(v)));
         return new StorageDictionary(ds);
     }

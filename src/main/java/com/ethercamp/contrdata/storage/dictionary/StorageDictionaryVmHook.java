@@ -4,14 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
-import org.ethereum.vm.VM;
-import org.ethereum.vm.VMHook;
+import org.ethereum.vm.hook.VMHook;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,16 +22,15 @@ import static org.ethereum.util.ByteUtil.toHexString;
 @Component
 public class StorageDictionaryVmHook implements VMHook {
 
-    @Autowired
-    private StorageDictionaryDb dictionaryDb;
-    @Autowired
-    private List<Layout.DictPathResolver> pathResolvers;
+    private final StorageDictionaryDb dictionaryDb;
+    private final List<Layout.DictPathResolver> pathResolvers;
     private java.util.Stack<StorageKeys> storageKeysStack = new java.util.Stack<>();
     private java.util.Stack<Sha3Index> sha3IndexStack = new java.util.Stack<>();
 
-    @PostConstruct
-    public void initVmHook() {
-        VM.setVmHook(this);
+    @Autowired
+    public StorageDictionaryVmHook(StorageDictionaryDb dictionaryDb, List<Layout.DictPathResolver> pathResolvers) {
+        this.dictionaryDb = dictionaryDb;
+        this.pathResolvers = pathResolvers;
     }
 
     private byte[] getContractAddress(Program program) {

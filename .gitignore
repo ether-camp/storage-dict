@@ -9,4 +9,5 @@
 access.info
 logs
 build
-database
+database*
+out

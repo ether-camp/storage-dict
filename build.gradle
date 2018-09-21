@@ -1,5 +1,5 @@
 group 'com.ethercamp'
-version '1.9.1-SNAPSHOT'
+version '1.9.2-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'maven'
@@ -25,18 +25,17 @@ repositories {
 
     maven { url "https://oss.jfrog.org/libs-snapshot/" }
     maven { url "https://dl.bintray.com/ethereum/maven/" }
-    maven { url "https://repo.spring.io/libs-snapshot" }
+    maven { url "https://repo.spring.io/libs-release" }
 }
 
 dependencies {
-    compile "org.springframework:spring-context:4.2.0.BUILD-SNAPSHOT"
     compile "org.projectlombok:lombok:1.16.4"
     compile "commons-codec:commons-codec:1.10"
 
     compile ("org.ethereum:ethereumj-core:1.9.0-SNAPSHOT")
 
     testCompile "junit:junit:4.12"
-    testCompile "org.springframework:spring-test:4.2.0.BUILD-SNAPSHOT"
+    testCompile "org.springframework:spring-test:4.3.19.RELEASE"
     testCompile "org.apache.httpcomponents:fluent-hc:4.5.2"
 }
 

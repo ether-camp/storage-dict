@@ -20,6 +20,7 @@ import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.util.blockchain.SolidityContract;
 import org.ethereum.util.blockchain.StandaloneBlockchain;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.hook.VMHook;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
@@ -66,10 +67,11 @@ public abstract class BaseTest {
     static class Config {
 
         @Bean
-        public StandaloneBlockchain localBlockchain() {
+        public StandaloneBlockchain localBlockchain(VMHook vmHook) {
             return new StandaloneBlockchain()
                     .withAutoblock(true)
-                    .withGasLimit(3_000_000_000L);
+                    .withGasLimit(3_000_000_000L)
+                    .withVmHook(vmHook);
         }
 
         @Bean

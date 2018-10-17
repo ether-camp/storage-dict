@@ -26,6 +26,7 @@ public class StorageDictionaryVmHook implements VMHook {
     private final List<Layout.DictPathResolver> pathResolvers;
     private java.util.Stack<StorageKeys> storageKeysStack = new java.util.Stack<>();
     private java.util.Stack<Sha3Index> sha3IndexStack = new java.util.Stack<>();
+    private boolean disabled;
 
     @Autowired
     public StorageDictionaryVmHook(StorageDictionaryDb dictionaryDb, List<Layout.DictPathResolver> pathResolvers) {
@@ -98,6 +99,15 @@ public class StorageDictionaryVmHook implements VMHook {
         } catch (Throwable e) {
             log.error("Error within handler address[" + toHexString(getContractAddress(program)) + "]: ", e);
         }
+    }
+
+    public void disable() {
+        this.disabled = true;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return disabled;
     }
 
     private static class StorageKeys {
